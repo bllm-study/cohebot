@@ -1,7 +1,7 @@
 import torch
 from torch.utils.data import Dataset, DataLoader
 
-from tokenizer import GPT2Tokenizer
+from .tokenizer import GPT2Tokenizer
 
 
 class TextDataset(Dataset):

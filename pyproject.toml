@@ -1,0 +1,29 @@
+[build-system]
+requires = ["hatchling>=1.27.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "cohebot"
+version = "0.1.0"
+description = "GPT-2 from scratch with Korean Wikipedia data pipeline"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "beautifulsoup4>=4.12.0",
+    "lxml>=5.0.0",
+    "mwparserfromhell>=0.6.5",
+    "numpy>=1.24.0",
+    "requests>=2.31.0",
+    "tiktoken>=0.5.0",
+    "torch>=2.0.0",
+    "tqdm>=4.65.0",
+]
+
+[project.scripts]
+cohebot-crawl = "cohebot.crawler:main"
+cohebot-preprocess = "cohebot.preprocessor:main"
+cohebot-train = "cohebot.train:main"
+cohebot-generate = "cohebot.generate:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/cohebot"]
