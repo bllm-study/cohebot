@@ -1,8 +1,8 @@
 import argparse
 import torch
 
-from model import GPT, GPTConfig, GPT2_TINY
-from tokenizer import GPT2Tokenizer
+from .model import GPT, GPTConfig, GPT2_TINY
+from .tokenizer import GPT2Tokenizer
 
 
 def load_model(checkpoint_path: str, device: str = "auto") -> tuple[GPT, GPTConfig]:

@@ -9,9 +9,9 @@ from torch.optim import AdamW
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from tqdm import tqdm
 
-from model import GPT, GPTConfig, GPT2_TINY, GPT2_SMALL, GPT2_M3_PRO
-from tokenizer import GPT2Tokenizer
-from dataset import create_dataloader
+from .model import GPT, GPTConfig, GPT2_TINY, GPT2_SMALL, GPT2_M3_PRO
+from .tokenizer import GPT2Tokenizer
+from .dataset import create_dataloader
 
 
 class Trainer:
@@ -272,7 +272,7 @@ def load_wikipedia_corpus(data_dir: str = "data") -> str:
     print("위키피디아 코퍼스가 없습니다. 다운로드를 시작합니다...")
     print("(전체 다운로드는 시간이 오래 걸립니다. --max-articles 옵션 사용 권장)")
 
-    from preprocessor import preprocess_wikipedia
+    from .preprocessor import preprocess_wikipedia
     preprocess_wikipedia(data_dir=data_dir)
 
     with open(corpus_path, "r", encoding="utf-8") as f:
@@ -354,7 +354,7 @@ def main():
     print(f"훈련 배치 수: {len(train_loader):,}")
     print(f"검증 배치 수: {len(val_loader):,}")
 
-    from model import GPT2_TINY, GPT2_SMALL, GPT2_MEDIUM
+    from .model import GPT2_TINY, GPT2_SMALL, GPT2_MEDIUM
 
     model_configs = {
         "tiny": GPT2_TINY,

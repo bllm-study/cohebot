@@ -255,7 +255,7 @@ def download_korean_wikipedia(
     return articles
 
 
-if __name__ == "__main__":
+def main():
     import argparse
 
     parser = argparse.ArgumentParser(description="한국어 위키피디아 크롤러")
@@ -292,3 +292,7 @@ if __name__ == "__main__":
     if articles:
         print(f"\n예시 문서: {articles[0]['title']}")
         print(articles[0]["text"][:500] + "...")
+
+
+if __name__ == "__main__":
+    main()

@@ -214,7 +214,7 @@ def preprocess_wikipedia(
     max_articles: int | None = None,
     use_api: bool = False,
 ) -> str:
-    from crawler import WikipediaDumpCrawler, WikipediaAPICrawler
+    from .crawler import WikipediaDumpCrawler, WikipediaAPICrawler
 
     if use_api:
         crawler = WikipediaAPICrawler(data_dir)
@@ -239,7 +239,7 @@ def preprocess_wikipedia(
     return str(preprocessor.corpus_path)
 
 
-if __name__ == "__main__":
+def main():
     import argparse
 
     parser = argparse.ArgumentParser(description="위키피디아 전처리")
@@ -285,3 +285,7 @@ if __name__ == "__main__":
             use_api=args.use_api,
         )
         print(f"\n코퍼스 경로: {corpus_path}")
+
+
+if __name__ == "__main__":
+    main()
