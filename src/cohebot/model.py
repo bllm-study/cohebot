@@ -1,7 +1,14 @@
 import math
+from typing import Literal
+
 import torch
 import torch.nn as nn
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+
+from .attention import MultiHeadAttention, GroupedQueryAttention, FlashAttention
+
+
+AttnType = Literal["mha", "gqa", "flash"]
 
 
 @dataclass
@@ -10,22 +17,39 @@ class GPTConfig:
     max_seq_len: int = 1024
     embed_dim: int = 768
     num_heads: int = 12
+    num_kv_heads: int | None = None  # GQA용. None이면 num_heads와 동일 (MHA 동작)
     num_layers: int = 12
     ff_dim: int = 3072
     dropout: float = 0.1
     bias: bool = True
+    attn_type: AttnType = "flash"  # "mha" | "gqa" | "flash"
+
+    def __post_init__(self):
+        if self.num_kv_heads is None:
+            self.num_kv_heads = self.num_heads
+        assert self.num_kv_heads <= self.num_heads, (
+            f"num_kv_heads({self.num_kv_heads})는 num_heads({self.num_heads}) 이하여야 합니다"
+        )
+        assert self.num_heads % self.num_kv_heads == 0, (
+            f"num_heads({self.num_heads})는 num_kv_heads({self.num_kv_heads})의 배수여야 합니다"
+        )
 
 
 class GELU(nn.Module):
-
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return 0.5 * x * (1.0 + torch.tanh(
-            math.sqrt(2.0 / math.pi) * (x + 0.044715 * torch.pow(x, 3))
-        ))
+        return (
+            0.5
+            * x
+            * (
+                1.0
+                + torch.tanh(
+                    math.sqrt(2.0 / math.pi) * (x + 0.044715 * torch.pow(x, 3))
+                )
+            )
+        )
 
 
 class LayerNorm(nn.Module):
-
     def __init__(self, dim: int, eps: float = 1e-5):
         super().__init__()
         self.eps = eps
@@ -39,63 +63,41 @@ class LayerNorm(nn.Module):
         return self.gamma * x_norm + self.beta
 
 
-class CausalSelfAttention(nn.Module):
+def _build_attention(config: GPTConfig) -> nn.Module:
+    """config.attn_type에 따라 어텐션 모듈 생성."""
+    assert config.num_kv_heads is not None  # __post_init__에서 보장
 
-    def __init__(self, config: GPTConfig):
-        super().__init__()
-        assert config.embed_dim % config.num_heads == 0
-
-        self.num_heads = config.num_heads
-        self.head_dim = config.embed_dim // config.num_heads
-        self.embed_dim = config.embed_dim
-
-        self.qkv_proj = nn.Linear(config.embed_dim, 3 * config.embed_dim, bias=config.bias)
-        self.out_proj = nn.Linear(config.embed_dim, config.embed_dim, bias=config.bias)
-
-        self.attn_dropout = nn.Dropout(config.dropout)
-        self.resid_dropout = nn.Dropout(config.dropout)
-
-        self.register_buffer(
-            "causal_mask",
-            torch.triu(
-                torch.ones(config.max_seq_len, config.max_seq_len),
-                diagonal=1
-            ).bool()
+    if config.attn_type == "mha":
+        return MultiHeadAttention(
+            embed_dim=config.embed_dim,
+            num_heads=config.num_heads,
+            max_seq_len=config.max_seq_len,
+            dropout=config.dropout,
+            bias=config.bias,
         )
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        batch_size, seq_len, _ = x.shape
-
-        qkv = self.qkv_proj(x)
-        q, k, v = qkv.split(self.embed_dim, dim=-1)
-
-        q = q.view(batch_size, seq_len, self.num_heads, self.head_dim).transpose(1, 2)
-        k = k.view(batch_size, seq_len, self.num_heads, self.head_dim).transpose(1, 2)
-        v = v.view(batch_size, seq_len, self.num_heads, self.head_dim).transpose(1, 2)
-
-        scale = 1.0 / math.sqrt(self.head_dim)
-        attn_scores = torch.matmul(q, k.transpose(-2, -1)) * scale
-
-        attn_scores = attn_scores.masked_fill(
-            self.causal_mask[:seq_len, :seq_len],
-            float("-inf")
+    elif config.attn_type == "gqa":
+        return GroupedQueryAttention(
+            embed_dim=config.embed_dim,
+            num_heads=config.num_heads,
+            num_kv_heads=config.num_kv_heads,
+            max_seq_len=config.max_seq_len,
+            dropout=config.dropout,
+            bias=config.bias,
         )
-
-        attn_weights = torch.softmax(attn_scores, dim=-1)
-        attn_weights = self.attn_dropout(attn_weights)
-
-        out = torch.matmul(attn_weights, v)
-
-        out = out.transpose(1, 2).contiguous().view(batch_size, seq_len, self.embed_dim)
-
-        out = self.out_proj(out)
-        out = self.resid_dropout(out)
-
-        return out
+    elif config.attn_type == "flash":
+        return FlashAttention(
+            embed_dim=config.embed_dim,
+            num_heads=config.num_heads,
+            num_kv_heads=config.num_kv_heads,
+            max_seq_len=config.max_seq_len,
+            dropout=config.dropout,
+            bias=config.bias,
+        )
+    else:
+        raise ValueError(f"Unknown attn_type: {config.attn_type}")
 
 
 class FeedForward(nn.Module):
-
     def __init__(self, config: GPTConfig):
         super().__init__()
         self.fc1 = nn.Linear(config.embed_dim, config.ff_dim, bias=config.bias)
@@ -112,11 +114,10 @@ class FeedForward(nn.Module):
 
 
 class TransformerBlock(nn.Module):
-
     def __init__(self, config: GPTConfig):
         super().__init__()
         self.ln1 = LayerNorm(config.embed_dim)
-        self.attn = CausalSelfAttention(config)
+        self.attn = _build_attention(config)
         self.ln2 = LayerNorm(config.embed_dim)
         self.ff = FeedForward(config)
 
@@ -127,18 +128,17 @@ class TransformerBlock(nn.Module):
 
 
 class GPT(nn.Module):
-
     def __init__(self, config: GPTConfig):
         super().__init__()
         self.config = config
 
         self.tok_embed = nn.Embedding(config.vocab_size, config.embed_dim)
-        self.pos_embed = nn.Embedding(config.max_seq_len, config.embed_dim)
+        # pos_embed 제거 — RoPE가 attention 내부에서 위치 정보를 인코딩
         self.dropout = nn.Dropout(config.dropout)
 
-        self.blocks = nn.ModuleList([
-            TransformerBlock(config) for _ in range(config.num_layers)
-        ])
+        self.blocks = nn.ModuleList(
+            [TransformerBlock(config) for _ in range(config.num_layers)]
+        )
 
         self.ln_final = LayerNorm(config.embed_dim)
         self.lm_head = nn.Linear(config.embed_dim, config.vocab_size, bias=False)
@@ -159,21 +159,17 @@ class GPT(nn.Module):
             torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
 
     def forward(
-        self,
-        input_ids: torch.Tensor,
-        targets: torch.Tensor | None = None
+        self, input_ids: torch.Tensor, targets: torch.Tensor | None = None
     ) -> tuple[torch.Tensor, torch.Tensor | None]:
         batch_size, seq_len = input_ids.shape
         device = input_ids.device
 
-        assert seq_len <= self.config.max_seq_len, \
+        assert seq_len <= self.config.max_seq_len, (
             f"시퀀스 길이 {seq_len}이 최대 길이 {self.config.max_seq_len}을 초과합니다"
-
-        positions = torch.arange(0, seq_len, dtype=torch.long, device=device)
+        )
 
         tok_emb = self.tok_embed(input_ids)
-        pos_emb = self.pos_embed(positions)
-        x = self.dropout(tok_emb + pos_emb)
+        x = self.dropout(tok_emb)
 
         for block in self.blocks:
             x = block(x)
@@ -184,9 +180,7 @@ class GPT(nn.Module):
         loss = None
         if targets is not None:
             loss = nn.functional.cross_entropy(
-                logits.view(-1, logits.size(-1)),
-                targets.view(-1),
-                ignore_index=-1
+                logits.view(-1, logits.size(-1)), targets.view(-1), ignore_index=-1
             )
 
         return logits, loss
@@ -206,7 +200,9 @@ class GPT(nn.Module):
         Returns:
             로드된 GPT 모델
         """
-        checkpoint = torch.load(checkpoint_path, map_location=device, weights_only=False)
+        checkpoint = torch.load(
+            checkpoint_path, map_location=device, weights_only=False
+        )
 
         if "config" in checkpoint:
             config = checkpoint["config"]
@@ -251,7 +247,7 @@ class GPT(nn.Module):
         for _ in range(max_new_tokens):
             idx_cond = input_ids
             if input_ids.size(1) > self.config.max_seq_len:
-                idx_cond = input_ids[:, -self.config.max_seq_len:]
+                idx_cond = input_ids[:, -self.config.max_seq_len :]
 
             logits, _ = self(idx_cond)
             logits = logits[:, -1, :]
@@ -268,7 +264,9 @@ class GPT(nn.Module):
                     torch.softmax(sorted_logits, dim=-1), dim=-1
                 )
                 sorted_indices_to_remove = cumulative_probs > top_p
-                sorted_indices_to_remove[:, 1:] = sorted_indices_to_remove[:, :-1].clone()
+                sorted_indices_to_remove[:, 1:] = sorted_indices_to_remove[
+                    :, :-1
+                ].clone()
                 sorted_indices_to_remove[:, 0] = False
 
                 indices_to_remove = sorted_indices_to_remove.scatter(
@@ -356,5 +354,7 @@ if __name__ == "__main__":
     print(f"Loss: {loss.item():.4f}")
 
     start_tokens = torch.randint(0, config.vocab_size, (1, 5))
-    generated = model.generate(start_tokens, max_new_tokens=20, temperature=0.8, top_k=50)
+    generated = model.generate(
+        start_tokens, max_new_tokens=20, temperature=0.8, top_k=50
+    )
     print(f"Generated shape: {generated.shape}")
