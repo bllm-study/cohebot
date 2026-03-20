@@ -212,17 +212,12 @@ class WikipediaPreprocessor:
 def preprocess_wikipedia(
     data_dir: str = "data",
     max_articles: int | None = None,
-    use_api: bool = False,
 ) -> str:
-    from .crawler import WikipediaDumpCrawler, WikipediaAPICrawler
+    from .crawler import HuggingFaceDatasetCrawler
 
-    if use_api:
-        crawler = WikipediaAPICrawler(data_dir)
-        articles = crawler.get_random_articles(max_articles or 1000)
-    else:
-        crawler = WikipediaDumpCrawler(data_dir)
-        crawler.download_dump()
-        articles = crawler.parse_dump(max_articles)
+    crawler = HuggingFaceDatasetCrawler(data_dir)
+    crawler.prepare_data()
+    articles = crawler.fetch_articles(max_articles)
 
     preprocessor = WikipediaPreprocessor(data_dir)
 
