@@ -1,0 +1,38 @@
+# CoheLLMBot 학습 설정 - GPU Cloud
+# 사용법:
+#   cohebot-train --config configs/cloud.toml
+#   cohebot-train --config configs/cloud.toml --batch-size 16
+
+[model]
+vocab_size = 50257
+max_seq_len = 1024
+embed_dim = 768
+num_heads = 12
+num_layers = 12
+ff_dim = 3072
+dropout = 0.1
+bias = true
+attn_type = "flash"
+
+[training]
+batch_size = 32
+seq_len = 512
+epochs = 10
+lr = 3e-4
+weight_decay = 0.1
+warmup_steps = 200
+max_grad_norm = 1.0
+fp16 = true
+save_every = 500
+
+[data]
+dir = "data"
+
+[checkpoint]
+dir = "/workspace/checkpoints"
+# upload_repo = "bllm-study/cohebot-ckpt"
+
+[logging]
+wandb = false
+wandb_project = "cohebot"
+# wandb_run_name = "cloud-run-1"
