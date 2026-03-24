@@ -12,7 +12,7 @@ AttnType = Literal["mha", "gqa", "flash"]
 
 
 @dataclass
-class GPTConfig:
+class CoheLLMBotConfig:
     vocab_size: int = 50257
     max_seq_len: int = 1024
     embed_dim: int = 768
@@ -63,7 +63,7 @@ class LayerNorm(nn.Module):
         return self.gamma * x_norm + self.beta
 
 
-def _build_attention(config: GPTConfig) -> nn.Module:
+def _build_attention(config: CoheLLMBotConfig) -> nn.Module:
     """config.attn_type에 따라 어텐션 모듈 생성."""
     assert config.num_kv_heads is not None  # __post_init__에서 보장
 
@@ -98,7 +98,7 @@ def _build_attention(config: GPTConfig) -> nn.Module:
 
 
 class FeedForward(nn.Module):
-    def __init__(self, config: GPTConfig):
+    def __init__(self, config: CoheLLMBotConfig):
         super().__init__()
         self.fc1 = nn.Linear(config.embed_dim, config.ff_dim, bias=config.bias)
         self.gelu = GELU()
@@ -114,7 +114,7 @@ class FeedForward(nn.Module):
 
 
 class TransformerBlock(nn.Module):
-    def __init__(self, config: GPTConfig):
+    def __init__(self, config: CoheLLMBotConfig):
         super().__init__()
         self.ln1 = LayerNorm(config.embed_dim)
         self.attn = _build_attention(config)
@@ -127,8 +127,8 @@ class TransformerBlock(nn.Module):
         return x
 
 
-class GPT(nn.Module):
-    def __init__(self, config: GPTConfig):
+class CoheLLMBot(nn.Module):
+    def __init__(self, config: CoheLLMBotConfig):
         super().__init__()
         self.config = config
 
@@ -190,16 +190,8 @@ class GPT(nn.Module):
         cls,
         checkpoint_path: str,
         device: str | torch.device = "cpu",
-    ) -> "GPT":
-        """체크포인트에서 모델을 로드합니다.
-
-        Args:
-            checkpoint_path: 체크포인트 파일 경로 (.pt 또는 .pth)
-            device: 모델을 로드할 디바이스
-
-        Returns:
-            로드된 GPT 모델
-        """
+    ) -> "CoheLLMBot":
+        """체크포인트에서 모델을 로드합니다."""
         checkpoint = torch.load(
             checkpoint_path, map_location=device, weights_only=False
         )
@@ -207,7 +199,7 @@ class GPT(nn.Module):
         if "config" in checkpoint:
             config = checkpoint["config"]
         else:
-            config = GPTConfig()
+            config = CoheLLMBotConfig()
             print("경고: 체크포인트에 config가 없어 기본 설정을 사용합니다.")
 
         model = cls(config)
@@ -282,67 +274,15 @@ class GPT(nn.Module):
         return input_ids
 
 
-GPT2_SMALL = GPTConfig(
-    vocab_size=50257,
-    max_seq_len=1024,
-    embed_dim=768,
-    num_heads=12,
-    num_layers=12,
-    ff_dim=3072,
-)
-
-GPT2_MEDIUM = GPTConfig(
-    vocab_size=50257,
-    max_seq_len=1024,
-    embed_dim=1024,
-    num_heads=16,
-    num_layers=24,
-    ff_dim=4096,
-)
-
-GPT2_LARGE = GPTConfig(
-    vocab_size=50257,
-    max_seq_len=1024,
-    embed_dim=1280,
-    num_heads=20,
-    num_layers=36,
-    ff_dim=5120,
-)
-
-GPT2_TINY = GPTConfig(
-    vocab_size=50257,
-    max_seq_len=256,
-    embed_dim=128,
-    num_heads=4,
-    num_layers=4,
-    ff_dim=512,
-    dropout=0.1,
-)
-
-GPT2_M3_PRO = GPTConfig(
-    vocab_size=50257,
-    max_seq_len=512,
-    embed_dim=384,
-    num_heads=6,
-    num_layers=6,
-    ff_dim=1536,
-    dropout=0.1,
-)
-
-GPT2_M3_PRO_LARGE = GPTConfig(
-    vocab_size=50257,
-    max_seq_len=1024,
-    embed_dim=768,
-    num_heads=12,
-    num_layers=12,
-    ff_dim=3072,
-    dropout=0.1,
-)
-
-
 if __name__ == "__main__":
-    config = GPT2_TINY
-    model = GPT(config)
+    config = CoheLLMBotConfig(
+        max_seq_len=256,
+        embed_dim=128,
+        num_heads=4,
+        num_layers=4,
+        ff_dim=512,
+    )
+    model = CoheLLMBot(config)
 
     batch_size = 2
     seq_len = 64

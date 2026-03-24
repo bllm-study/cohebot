@@ -1,0 +1,34 @@
+# CoheLLMBot 학습 설정 - 로컬 개발용
+# 사용법: cohebot-train --config configs/default.toml
+
+[model]
+vocab_size = 50257
+max_seq_len = 1024
+embed_dim = 768
+num_heads = 12
+num_layers = 12
+ff_dim = 3072
+dropout = 0.1
+bias = true
+attn_type = "flash"
+
+[training]
+batch_size = 4
+seq_len = 512
+epochs = 3
+lr = 3e-4
+weight_decay = 0.1
+warmup_steps = 100
+max_grad_norm = 1.0
+fp16 = false
+save_every = 1000
+
+[data]
+dir = "data"
+
+[checkpoint]
+dir = "checkpoints"
+
+[logging]
+wandb = false
+wandb_project = "cohebot"

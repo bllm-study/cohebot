@@ -1,11 +1,11 @@
 import argparse
 import torch
 
-from .model import GPT, GPTConfig, GPT2_TINY
+from .model import CoheLLMBot, CoheLLMBotConfig
 from .tokenizer import GPT2Tokenizer
 
 
-def load_model(checkpoint_path: str, device: str = "auto") -> tuple[GPT, GPTConfig]:
+def load_model(checkpoint_path: str, device: str = "auto") -> tuple[CoheLLMBot, CoheLLMBotConfig]:
     if device == "auto":
         if torch.cuda.is_available():
             device = "cuda"
@@ -16,7 +16,7 @@ def load_model(checkpoint_path: str, device: str = "auto") -> tuple[GPT, GPTConf
 
     checkpoint = torch.load(checkpoint_path, map_location=device, weights_only=False)
     config = checkpoint["config"]
-    model = GPT(config)
+    model = CoheLLMBot(config)
     model.load_state_dict(checkpoint["model_state_dict"])
     model.to(device)
     model.eval()
@@ -25,7 +25,7 @@ def load_model(checkpoint_path: str, device: str = "auto") -> tuple[GPT, GPTConf
 
 
 def generate_text(
-    model: GPT,
+    model: CoheLLMBot,
     tokenizer: GPT2Tokenizer,
     prompt: str,
     max_new_tokens: int = 100,
@@ -50,8 +50,8 @@ def generate_text(
     return generated_text
 
 
-def interactive_mode(model: GPT, tokenizer: GPT2Tokenizer, device: str):
-    print("\n=== GPT 텍스트 생성기 ===")
+def interactive_mode(model: CoheLLMBot, tokenizer: GPT2Tokenizer, device: str):
+    print("\n=== CoheLLMBot 텍스트 생성기 ===")
     print("'quit' 또는 'exit'를 입력하면 종료합니다.\n")
 
     while True:
@@ -98,7 +98,7 @@ def interactive_mode(model: GPT, tokenizer: GPT2Tokenizer, device: str):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="GPT 텍스트 생성")
+    parser = argparse.ArgumentParser(description="CoheLLMBot 텍스트 생성")
     parser.add_argument(
         "--checkpoint",
         type=str,
@@ -163,8 +163,11 @@ def main():
     except FileNotFoundError:
         print(f"체크포인트를 찾을 수 없습니다: {args.checkpoint}")
         print("테스트용 랜덤 초기화 모델을 사용합니다.")
-        config = GPT2_TINY
-        model = GPT(config).to(device)
+        config = CoheLLMBotConfig(
+            max_seq_len=256, embed_dim=128, num_heads=4,
+            num_layers=4, ff_dim=512,
+        )
+        model = CoheLLMBot(config).to(device)
 
     if args.prompt:
         text = generate_text(
