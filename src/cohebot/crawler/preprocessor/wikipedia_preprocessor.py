@@ -171,7 +171,6 @@ def preprocess_wikipedia(
     from ..huggingface_crawler import HuggingFaceDatasetCrawler
 
     crawler = HuggingFaceDatasetCrawler(data_dir)
-    crawler.prepare_data()
     articles = crawler.fetch_articles(max_articles)
 
     preprocessor = WikipediaPreprocessor(data_dir)

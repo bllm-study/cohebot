@@ -410,14 +410,13 @@ def load_wikipedia_corpus(data_dir: str = "data") -> str:
         with open(corpus_path, "r", encoding="utf-8") as f:
             return f.read()
 
-    print("위키피디아 코퍼스가 없습니다. 다운로드를 시작합니다...")
-    print("(전체 다운로드는 시간이 오래 걸립니다. --max-articles 옵션 사용 권장)")
-
-    from .preprocessor import preprocess_wikipedia
-    preprocess_wikipedia(data_dir=data_dir)
-
-    with open(corpus_path, "r", encoding="utf-8") as f:
-        return f.read()
+    raise FileNotFoundError(
+        f"코퍼스 파일이 없습니다: {corpus_path}\n"
+        f"다음 명령어로 생성하세요:\n"
+        f"  uv run cohebot-crawl --data-dir {data_dir}\n"
+        f"또는 HuggingFace Hub에서 다운로드하세요:\n"
+        f"  uv run huggingface-cli download bllm-study/kowiki-corpus --local-dir {data_dir}"
+    )
 
 
 def load_config(path: str) -> dict:
