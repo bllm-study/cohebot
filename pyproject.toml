@@ -8,9 +8,6 @@ version = "0.1.0"
 description = "CoheLLMBot: LLM from scratch with Korean Wikipedia data pipeline"
 requires-python = ">=3.10"
 dependencies = [
-    "beautifulsoup4>=4.12.0",
-    "lxml>=5.0.0",
-    "mwparserfromhell>=0.6.5",
     "numpy>=1.24.0",
     "requests>=2.31.0",
     "huggingface-hub>=0.20.0",
@@ -18,6 +15,9 @@ dependencies = [
     "tomli>=2.0.0; python_version < '3.11'",
     "torch>=2.0.0",
     "tqdm>=4.65.0",
+    "huggingface_hub>=1.7.2",
+    "datasets>=*",
+    "pyarrow>=*",
 ]
 
 [project.scripts]
