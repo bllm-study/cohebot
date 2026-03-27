@@ -27,11 +27,11 @@ def main():
         print(f"   uv run cohebot-crawl --data-dir {args.data_dir}")
         print()
         print("2. HuggingFace Hub에 업로드:")
-        print(f"   uv run huggingface-cli upload bllm-study/kowiki-corpus {args.data_dir}/wiki_corpus.txt")
-        print(f"   uv run huggingface-cli upload bllm-study/kowiki-corpus {args.data_dir}/wiki_clean.jsonl")
+        print(f"   uv run hf upload bllm-study/kowiki-corpus {args.data_dir}/wiki_corpus.txt --repo-type dataset")
+        print(f"   uv run hf upload bllm-study/kowiki-corpus {args.data_dir}/wiki_clean.jsonl --repo-type dataset")
         print()
         print("3. (선택) README 생성 후 업로드:")
-        print("   uv run huggingface-cli upload bllm-study/kowiki-corpus README.md")
+        print("   uv run hf upload bllm-study/kowiki-corpus README.md --repo-type dataset")
         print()
         return
 

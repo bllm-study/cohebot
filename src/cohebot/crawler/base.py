@@ -26,7 +26,7 @@ class BaseCrawler(ABC):
         pass
 
     @abstractmethod
-    def prepare_data(self, data_dir: str) -> Path:
+    def prepare_data(self, data_dir: str | None = None) -> Path:
         """Prepare data directory and download if needed.
 
         Args:

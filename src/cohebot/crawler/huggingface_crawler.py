@@ -2,7 +2,6 @@ from datasets import load_dataset
 from huggingface_hub import snapshot_download
 from pathlib import Path
 from typing import Iterator, Optional
-import shutil
 
 from .base import BaseCrawler
 
@@ -98,7 +97,7 @@ class HuggingFaceDatasetCrawler(BaseCrawler):
         Yields:
             Article dictionaries with id, url, title, and text fields.
         """
-        ds = load_dataset(self.REPO_ID, self.SUBSET, split="train", streaming=self.streaming)
+        ds = load_dataset(self.REPO_ID, self.SUBSET, split="train", streaming=self.streaming, cache_dir=str(self.data_dir))
 
         if max_articles:
             ds = ds.take(max_articles)

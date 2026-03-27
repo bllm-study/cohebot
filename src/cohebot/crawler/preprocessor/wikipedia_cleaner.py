@@ -1,9 +1,5 @@
 import re
 import unicodedata
-from pathlib import Path
-from typing import Iterator
-
-from tqdm import tqdm
 
 
 class WikiTextCleaner:

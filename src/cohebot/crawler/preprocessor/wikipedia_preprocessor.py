@@ -37,14 +37,12 @@ class WikipediaPreprocessor:
 
     def process_articles(
         self,
-        articles: Iterator[dict],
-        save_raw: bool = True
+        articles: Iterator[dict]
     ) -> Iterator[dict]:
         """Process and validate articles.
 
         Args:
             articles: Iterator of article dictionaries.
-            save_raw: Whether to save raw articles to file.
 
         Yields:
             Cleaned article dictionaries with id, url, title, and text fields.

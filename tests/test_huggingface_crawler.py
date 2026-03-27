@@ -8,10 +8,6 @@ Tests cover:
 
 import json
 from pathlib import Path
-import sys
-from pathlib import Path as PLPath
-
-sys.path.insert(0, str(PLPath(__file__).parent.parent.parent))
 
 from cohebot.crawler import HuggingFaceDatasetCrawler
 from cohebot.crawler.preprocessor import WikipediaPreprocessor

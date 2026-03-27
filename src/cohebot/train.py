@@ -415,7 +415,7 @@ def load_wikipedia_corpus(data_dir: str = "data") -> str:
         f"다음 명령어로 생성하세요:\n"
         f"  uv run cohebot-crawl --data-dir {data_dir}\n"
         f"또는 HuggingFace Hub에서 다운로드하세요:\n"
-        f"  uv run huggingface-cli download bllm-study/kowiki-corpus --local-dir {data_dir}"
+        f"  uv run hf download bllm-study/kowiki-corpus --repo-type dataset --include 'wiki_corpus.txt' --local-dir {data_dir}"
     )
 
 
