@@ -1,6 +1,6 @@
 from .base import BaseCrawler
 from .huggingface_crawler import HuggingFaceDatasetCrawler
-from .preprocessor.wikipedia_preprocessor import WikipediaPreprocessor
+from .preprocessor.wikipedia_preprocessor import WikipediaPreprocessor, preprocess_wikipedia
 
 __all__ = [
     "BaseCrawler",
