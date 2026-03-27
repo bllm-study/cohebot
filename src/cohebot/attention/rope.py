@@ -15,11 +15,13 @@ class RotaryPositionEmbedding(nn.Module):
 
     def __init__(self, dim: int, max_seq_len: int = 4096, base: float = 10000.0):
         super().__init__()
-        # TODO: 주파수 텐서 사전 계산
-        #   - theta_i = base^(-2i/dim), i = 0..dim//2-1
-        #   - (max_seq_len, dim//2) 크기 freqs 생성
-        #   - cos, sin 캐싱 (register_buffer)
-        raise NotImplementedError
+        inv_freq = 1.0 / (base ** (torch.arange(0, dim, 2, dtype=torch.float32) / dim))
+        self.register_buffer("inv_freq", inv_freq, persistent=False)
+
+        t = torch.arange(max_seq_len, dtype=torch.float32)
+        freqs = torch.outer(t, inv_freq)
+        self.register_buffer("_cos_cached", freqs.cos(), persistent=False)
+        self.register_buffer("_sin_cached", freqs.sin(), persistent=False)
 
     def forward(
         self, q: torch.Tensor, k: torch.Tensor, offset: int = 0
@@ -34,9 +36,14 @@ class RotaryPositionEmbedding(nn.Module):
         Returns:
             rotary embedding이 적용된 (q, k) 튜플.
         """
-        # TODO:
-        #   1. q, k를 (..., dim//2, 2)로 reshape하여 짝/홀수 분리
-        #   2. 캐싱된 cos, sin에서 [offset:offset+seq_len] 슬라이스
-        #   3. 회전 적용: even * cos - odd * sin, odd * cos + even * sin
-        #   4. 원래 shape으로 복원
-        raise NotImplementedError
+        seq_len = q.shape[2]
+        cos = self._cos_cached[offset : offset + seq_len]
+        sin = self._sin_cached[offset : offset + seq_len]
+
+        def _rotate(x: torch.Tensor) -> torch.Tensor:
+            x1, x2 = x[..., ::2], x[..., 1::2]
+            return torch.stack(
+                [x1 * cos - x2 * sin, x2 * cos + x1 * sin], dim=-1
+            ).flatten(-2)
+
+        return _rotate(q), _rotate(k)

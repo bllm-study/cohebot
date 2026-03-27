@@ -7,3 +7,7 @@ __pycache__/
 .env
 data/
 *.bz2
+checkpoints/**
+
+.sisyphus/**
+.claude/**
