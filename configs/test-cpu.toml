@@ -1,0 +1,33 @@
+# CoheLLMBot CPU 테스트용 설정 (극소형 모델)
+# 사용법: uv run cohebot-train --config configs/test-cpu.toml
+
+[model]
+vocab_size = 50257
+max_seq_len = 128
+embed_dim = 128
+num_heads = 4
+num_layers = 2
+ff_dim = 512
+dropout = 0.1
+bias = true
+attn_type = "mha"
+
+[training]
+batch_size = 2
+seq_len = 128
+epochs = 1
+lr = 3e-4
+weight_decay = 0.1
+warmup_steps = 10
+max_grad_norm = 1.0
+fp16 = false
+save_every = 0
+
+[data]
+dir = "data"
+
+[checkpoint]
+dir = "checkpoints/test-cpu"
+
+[logging]
+wandb = false
