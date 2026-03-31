@@ -1,0 +1,38 @@
+# Smoke test용 ~100M 파라미터 모델 설정
+# 사용법: python tests/smoke_test.py --config configs/smoke-100m.toml
+#
+# 파라미터 구성 (~95M):
+#   Token embedding (shared): 50257 × 768 = 38.6M
+#   Transformer blocks ×8:    8 × 7.1M   = 56.7M
+#   Total                   ≈ 95.3M
+
+[model]
+vocab_size = 50257
+max_seq_len = 512
+embed_dim = 768
+num_heads = 12
+num_layers = 8
+ff_dim = 3072
+dropout = 0.1
+bias = true
+attn_type = "mha"
+
+[training]
+batch_size = 4
+seq_len = 256
+epochs = 1
+lr = 3e-4
+weight_decay = 0.1
+warmup_steps = 5
+max_grad_norm = 1.0
+fp16 = false
+save_every = 0
+
+[data]
+dir = "data"
+
+[checkpoint]
+dir = "checkpoints/smoke-100m"
+
+[logging]
+wandb = false
