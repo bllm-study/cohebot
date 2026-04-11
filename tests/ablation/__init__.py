@@ -7,6 +7,11 @@ from cohebot.model import CoheLLMBot, CoheLLMBotConfig
 
 STEPS = 500
 SEQ_LEN = 1024
+DEVICE = (
+    "mps" if torch.backends.mps.is_available()
+    else "cuda" if torch.cuda.is_available()
+    else "cpu"
+)
 CONFIG = CoheLLMBotConfig(
     vocab_size=50257, max_seq_len=SEQ_LEN, embed_dim=128,
     num_heads=4, num_layers=4, ff_dim=512, dropout=0.0,
@@ -14,7 +19,7 @@ CONFIG = CoheLLMBotConfig(
 
 
 def make_data(config=CONFIG):
-    seq = torch.arange(config.max_seq_len + 1).unsqueeze(0)
+    seq = torch.arange(config.max_seq_len + 1, device=DEVICE).unsqueeze(0)
     return seq[:, :-1], seq[:, 1:]
 
 
@@ -26,6 +31,7 @@ def run(attn_cls, data, config=CONFIG, steps=STEPS):
             embed_dim=config.embed_dim, num_heads=config.num_heads,
             max_seq_len=config.max_seq_len, dropout=config.dropout, bias=config.bias,
         )
+    model.to(DEVICE)
 
     optimizer = torch.optim.AdamW(model.parameters(), lr=3e-4)
     model.train()
@@ -42,7 +48,8 @@ def run(attn_cls, data, config=CONFIG, steps=STEPS):
 
 def print_table(results, steps=STEPS):
     mid = steps // 2
-    print(f"\n{'Variant':<20} {'Step 1':>8} {f'Step {mid}':>9} {f'Step {steps}':>9} {'PPL':>8} {'Time':>7}")
+    print(f"\n[device={DEVICE}, seq_len={SEQ_LEN}, steps={steps}]")
+    print(f"{'Variant':<20} {'Step 1':>8} {f'Step {mid}':>9} {f'Step {steps}':>9} {'PPL':>8} {'Time':>7}")
     print("-" * 63)
     for name, (losses, t) in results.items():
         ppl = math.exp(min(losses[-1], 20))
