@@ -23,8 +23,7 @@ class WikiTextCleaner:
         """
         self.min_text_length = min_text_length
         self.normalize_patterns = [
-            (re.compile(p, re.MULTILINE), r)
-            for p, r in self.NORMALIZE_PATTERNS
+            (re.compile(p, re.MULTILINE), r) for p, r in self.NORMALIZE_PATTERNS
         ]
 
     def normalize_text(self, text: str) -> str:

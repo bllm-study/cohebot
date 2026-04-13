@@ -6,5 +6,5 @@ repos:
       # Linter 실행
       - id: ruff
         args: [ --fix ]
-      # Formatter 실행 (옵션)
+      # Formatter 실행
       - id: ruff-format

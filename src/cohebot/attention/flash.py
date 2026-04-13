@@ -73,9 +73,7 @@ class FlashAttention(nn.Module):
 
         # 4. F.scaled_dot_product_attention(q, k, v, dropout_p=..., is_causal=True)
         dropout_p = self.dropout if self.training else 0.0
-        out = F.scaled_dot_product_attention(
-            q, k, v, dropout_p=dropout_p, is_causal=True
-        )
+        out = F.scaled_dot_product_attention(q, k, v, dropout_p=dropout_p, is_causal=True)
 
         # 5. 헤드 결합 -> 출력 프로젝션 -> 잔차 드롭아웃
         out = out.transpose(1, 2).contiguous().view(B, T, self.embed_dim)

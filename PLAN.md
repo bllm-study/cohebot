@@ -90,6 +90,9 @@ uv run cohebot-train --config configs/default.toml
 # 최초 1회만 실행 (이후에는 git commit 시 자동 동작)
 uv sync                 # 의존성(pre-commit 등) 설치 확인
 uv run pre-commit install
+
+# lint / format
+uv run ruff check --fix . && uv run ruff format .
 ```
 
 ---
