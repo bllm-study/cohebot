@@ -5,6 +5,7 @@ repos:
     hooks:
       # Linter 실행
       - id: ruff
-        args: [ --fix ]
+        args: [ --fix, --output-format=github ]
       # Formatter 실행
       - id: ruff-format
+        args: [ --preview, --output-format=github ]

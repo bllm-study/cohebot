@@ -91,8 +91,8 @@ uv run cohebot-train --config configs/default.toml
 uv sync                 # 의존성(pre-commit 등) 설치 확인
 uv run pre-commit install
 
-# lint / format
-uv run ruff check --fix . && uv run ruff format .
+# lint / format (GitHub Action 설정과 완전 동일하게 --output-format 지정)
+uv run ruff check --fix --output-format=github . && uv run ruff format --preview --output-format=github .
 ```
 
 ---

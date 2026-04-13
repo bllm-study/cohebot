@@ -12,15 +12,16 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       
-      - name: Install uv
-        uses: astral-sh/setup-uv@v5
-        with:
-          enable-cache: true
-
       # 1. 린터 (문법 및 안티패턴 검사)
       - name: Run Ruff Linter
-        run: uv run ruff check .
+        uses: astral-sh/ruff-action@v3
+        with:
+          version: "0.15.10"
+          args: "check --output-format=github"
 
       # 2. 포매터 (띄어쓰기, 줄바꿈 등 코드 스타일 검사)
       - name: Run Ruff Formatter
-        run: uv run ruff format --check .
+        uses: astral-sh/ruff-action@v3
+        with:
+          version: "0.15.10"
+          args: "format --check --preview"
