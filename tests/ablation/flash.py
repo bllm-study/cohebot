@@ -2,7 +2,8 @@
 
 from cohebot.attention.flash import FlashAttention
 from cohebot.attention.mha import MultiHeadAttention
-from . import make_data, run, print_table
+
+from . import make_data, print_table, run
 
 
 def main():

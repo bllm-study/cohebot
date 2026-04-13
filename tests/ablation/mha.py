@@ -6,7 +6,8 @@ import torch
 import torch.nn as nn
 
 from cohebot.attention.mha import MultiHeadAttention
-from . import make_data, run, print_table
+
+from . import make_data, print_table, run
 
 
 class CausalSelfAttention(nn.Module):

@@ -43,9 +43,7 @@ class MultiHeadAttention(nn.Module):
 
         self.rope = RotaryPositionEmbedding(self.head_dim, max_seq_len)
 
-        causal_mask = torch.triu(
-            torch.ones(max_seq_len, max_seq_len, dtype=torch.bool), diagonal=1
-        )
+        causal_mask = torch.triu(torch.ones(max_seq_len, max_seq_len, dtype=torch.bool), diagonal=1)
         self.register_buffer("causal_mask", causal_mask, persistent=False)
 
         self.attn_dropout = nn.Dropout(dropout)

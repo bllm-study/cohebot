@@ -31,23 +31,37 @@ import torch
 from cohebot.dataset import create_dataloader
 from cohebot.model import CoheLLMBot, CoheLLMBotConfig
 from cohebot.tokenizer import GPT2Tokenizer
-from cohebot.train import Trainer, load_config, _resolve_model_config
-
+from cohebot.train import Trainer, _resolve_model_config, load_config
 
 # ── 모델 프리셋 ─────────────────────────────────
 
 PRESETS: dict[str, CoheLLMBotConfig] = {
     "tiny": CoheLLMBotConfig(
-        max_seq_len=128, embed_dim=128, num_heads=4,
-        num_layers=2, ff_dim=512, dropout=0.0, attn_type="mha",
+        max_seq_len=128,
+        embed_dim=128,
+        num_heads=4,
+        num_layers=2,
+        ff_dim=512,
+        dropout=0.0,
+        attn_type="mha",
     ),
     "small": CoheLLMBotConfig(
-        max_seq_len=256, embed_dim=384, num_heads=6,
-        num_layers=6, ff_dim=1536, dropout=0.0, attn_type="mha",
+        max_seq_len=256,
+        embed_dim=384,
+        num_heads=6,
+        num_layers=6,
+        ff_dim=1536,
+        dropout=0.0,
+        attn_type="mha",
     ),
     "100m": CoheLLMBotConfig(
-        max_seq_len=512, embed_dim=768, num_heads=12,
-        num_layers=8, ff_dim=3072, dropout=0.0, attn_type="mha",
+        max_seq_len=512,
+        embed_dim=768,
+        num_heads=12,
+        num_layers=8,
+        ff_dim=3072,
+        dropout=0.0,
+        attn_type="mha",
     ),
 }
 
@@ -76,6 +90,7 @@ def _build_synthetic_corpus(tokenizer: GPT2Tokenizer, min_tokens: int) -> str:
 
 # ── 검증 결과 ───────────────────────────────────
 
+
 @dataclass
 class _TestResult:
     name: str
@@ -86,6 +101,7 @@ class _TestResult:
 
 # ── 디바이스 감지 ───────────────────────────────
 
+
 def _detect_device() -> torch.device:
     if torch.cuda.is_available():
         return torch.device("cuda")
@@ -95,6 +111,7 @@ def _detect_device() -> torch.device:
 
 
 # ── Smoke Test Runner ───────────────────────────
+
 
 class SmokeTestRunner:
     """학습 파이프라인의 각 단계를 개별 검증한다."""
@@ -129,7 +146,8 @@ class SmokeTestRunner:
     def _make_loader(self, min_tokens: int, *, shuffle: bool = True):
         corpus = _build_synthetic_corpus(self.tokenizer, min_tokens)
         return create_dataloader(
-            corpus, self.tokenizer,
+            corpus,
+            self.tokenizer,
             batch_size=self.batch_size,
             max_length=self.seq_len,
             stride=self.seq_len // 2,
@@ -146,8 +164,10 @@ class SmokeTestRunner:
             n_params = sum(p.numel() for p in model.parameters())
             elapsed = time.time() - t0
             self._record(
-                "모델 생성", True,
-                f"총 {n_params / 1e6:.2f}M params", elapsed,
+                "모델 생성",
+                True,
+                f"총 {n_params / 1e6:.2f}M params",
+                elapsed,
             )
             return model
         except Exception as e:
@@ -159,8 +179,12 @@ class SmokeTestRunner:
         t0 = time.time()
         try:
             model.to(self.device)
-            x = torch.randint(0, self.config.vocab_size, (self.batch_size, self.seq_len), device=self.device)
-            y = torch.randint(0, self.config.vocab_size, (self.batch_size, self.seq_len), device=self.device)
+            x = torch.randint(
+                0, self.config.vocab_size, (self.batch_size, self.seq_len), device=self.device
+            )
+            y = torch.randint(
+                0, self.config.vocab_size, (self.batch_size, self.seq_len), device=self.device
+            )
             logits, loss = model(x, y)
 
             assert logits.shape == (self.batch_size, self.seq_len, self.config.vocab_size)
@@ -168,8 +192,10 @@ class SmokeTestRunner:
 
             elapsed = time.time() - t0
             self._record(
-                "Forward pass", True,
-                f"logits={list(logits.shape)}, loss={loss.item():.4f}", elapsed,
+                "Forward pass",
+                True,
+                f"logits={list(logits.shape)}, loss={loss.item():.4f}",
+                elapsed,
             )
             return True
         except Exception as e:
@@ -180,8 +206,12 @@ class SmokeTestRunner:
         """Backward pass — 모든 파라미터에 gradient가 생성되는지 확인한다."""
         t0 = time.time()
         try:
-            x = torch.randint(0, self.config.vocab_size, (self.batch_size, self.seq_len), device=self.device)
-            y = torch.randint(0, self.config.vocab_size, (self.batch_size, self.seq_len), device=self.device)
+            x = torch.randint(
+                0, self.config.vocab_size, (self.batch_size, self.seq_len), device=self.device
+            )
+            y = torch.randint(
+                0, self.config.vocab_size, (self.batch_size, self.seq_len), device=self.device
+            )
             _, loss = model(x, y)
             loss.backward()
 
@@ -216,7 +246,7 @@ class SmokeTestRunner:
 
             elapsed = time.time() - t0
             first, last = losses[0], losses[-1]
-            all_finite = all(math.isfinite(l) for l in losses)
+            all_finite = all(math.isfinite(loss) for loss in losses)
             decreased = last < first
             throughput = (self.num_steps * self.batch_size * self.seq_len) / elapsed
 
@@ -240,7 +270,7 @@ class SmokeTestRunner:
         try:
             loader = self._make_loader(self.seq_len * self.batch_size * 20)
             n_batches = len(loader)
-            assert n_batches > 0, f"DataLoader가 비어 있음"
+            assert n_batches > 0, "DataLoader가 비어 있음"
 
             model.train()
             optimizer = torch.optim.AdamW(model.parameters(), lr=1e-3)
@@ -258,7 +288,7 @@ class SmokeTestRunner:
                 losses.append(loss.item())
 
             elapsed = time.time() - t0
-            all_finite = all(math.isfinite(l) for l in losses)
+            all_finite = all(math.isfinite(loss) for loss in losses)
             mid = len(losses) // 2
             first_half = sum(losses[:mid]) / max(1, mid)
             second_half = sum(losses[mid:]) / max(1, len(losses) - mid)
@@ -291,8 +321,10 @@ class SmokeTestRunner:
             elapsed = time.time() - t0
             passed = generated.shape[1] > input_ids.shape[1]
             self._record(
-                "텍스트 생성", passed,
-                f"'{output_text[:80]}...' ({generated.shape[1]} tokens)", elapsed,
+                "텍스트 생성",
+                passed,
+                f"'{output_text[:80]}...' ({generated.shape[1]} tokens)",
+                elapsed,
             )
             return passed
         except Exception as e:
@@ -305,17 +337,22 @@ class SmokeTestRunner:
         try:
             with tempfile.TemporaryDirectory() as tmpdir:
                 ckpt_path = Path(tmpdir) / "smoke_checkpoint.pt"
-                torch.save({
-                    "model_state_dict": model.state_dict(),
-                    "config": model.config,
-                    "epoch": 0, "step": 10, "loss": 5.0,
-                }, ckpt_path)
+                torch.save(
+                    {
+                        "model_state_dict": model.state_dict(),
+                        "config": model.config,
+                        "epoch": 0,
+                        "step": 10,
+                        "loss": 5.0,
+                    },
+                    ckpt_path,
+                )
 
                 ckpt_size_mb = ckpt_path.stat().st_size / 1e6
                 loaded = CoheLLMBot.from_checkpoint(str(ckpt_path), device=str(self.device))
 
                 for (n1, p1), (n2, p2) in zip(
-                    model.named_parameters(), loaded.named_parameters(),
+                    model.named_parameters(), loaded.named_parameters(), strict=True
                 ):
                     assert n1 == n2, f"파라미터 이름 불일치: {n1} vs {n2}"
                     assert torch.equal(p1, p2), f"파라미터 값 불일치: {n1}"
@@ -334,21 +371,32 @@ class SmokeTestRunner:
             corpus = _build_synthetic_corpus(self.tokenizer, self.seq_len * self.batch_size * 30)
             split = int(len(corpus) * 0.8)
             train_loader = create_dataloader(
-                corpus[:split], self.tokenizer,
-                batch_size=self.batch_size, max_length=self.seq_len,
-                stride=self.seq_len // 2, shuffle=True,
+                corpus[:split],
+                self.tokenizer,
+                batch_size=self.batch_size,
+                max_length=self.seq_len,
+                stride=self.seq_len // 2,
+                shuffle=True,
             )
             val_loader = create_dataloader(
-                corpus[split:], self.tokenizer,
-                batch_size=self.batch_size, max_length=self.seq_len,
-                stride=self.seq_len // 2, shuffle=False,
+                corpus[split:],
+                self.tokenizer,
+                batch_size=self.batch_size,
+                max_length=self.seq_len,
+                stride=self.seq_len // 2,
+                shuffle=False,
             )
 
             with tempfile.TemporaryDirectory() as tmpdir:
                 trainer = Trainer(
-                    model=model, train_dataloader=train_loader, val_dataloader=val_loader,
-                    learning_rate=1e-3, num_epochs=1, warmup_steps=2,
-                    checkpoint_dir=tmpdir, device=str(self.device),
+                    model=model,
+                    train_dataloader=train_loader,
+                    val_dataloader=val_loader,
+                    learning_rate=1e-3,
+                    num_epochs=1,
+                    warmup_steps=2,
+                    checkpoint_dir=tmpdir,
+                    device=str(self.device),
                     save_every_n_batches=0,
                 )
                 trainer.train(start_epoch=0)
@@ -359,17 +407,24 @@ class SmokeTestRunner:
                 # 체크포인트에서 재개
                 model2 = CoheLLMBot(self.config)
                 trainer2 = Trainer(
-                    model=model2, train_dataloader=train_loader, val_dataloader=val_loader,
-                    learning_rate=1e-3, num_epochs=2, warmup_steps=2,
-                    checkpoint_dir=tmpdir, device=str(self.device),
+                    model=model2,
+                    train_dataloader=train_loader,
+                    val_dataloader=val_loader,
+                    learning_rate=1e-3,
+                    num_epochs=2,
+                    warmup_steps=2,
+                    checkpoint_dir=tmpdir,
+                    device=str(self.device),
                     save_every_n_batches=0,
                 )
                 loaded_epoch, _ = trainer2.load_checkpoint(str(ckpt_path))
 
             elapsed = time.time() - t0
             self._record(
-                "Trainer 통합 (학습+재개)", True,
-                f"1에폭 학습 완료, 체크포인트 재개 성공 (epoch {loaded_epoch})", elapsed,
+                "Trainer 통합 (학습+재개)",
+                True,
+                f"1에폭 학습 완료, 체크포인트 재개 성공 (epoch {loaded_epoch})",
+                elapsed,
             )
             return True
         except Exception as e:
@@ -404,8 +459,10 @@ class SmokeTestRunner:
         print("CoheLLMBot Smoke Test")
         print(f"{'=' * 60}")
         print(f"  Device:  {self.device}")
-        print(f"  Model:   embed_dim={self.config.embed_dim}, "
-              f"layers={self.config.num_layers}, heads={self.config.num_heads}")
+        print(
+            f"  Model:   embed_dim={self.config.embed_dim}, "
+            f"layers={self.config.num_layers}, heads={self.config.num_heads}"
+        )
         print(f"  Batch:   {self.batch_size} × {self.seq_len} tokens")
         print(f"  Steps:   {self.num_steps}")
         print(f"{'=' * 60}\n")
@@ -450,6 +507,7 @@ class SmokeTestRunner:
 
 # ── CLI ──────────────────────────────────────────
 
+
 def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="CoheLLMBot smoke test — 외부 데이터 없이 학습 파이프라인 검증",
@@ -467,15 +525,18 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
   uv run python tests/smoke_test.py --preset small --steps 20 --device cpu
 """,
     )
-    parser.add_argument("--preset", choices=list(PRESETS), default="tiny",
-                        help="모델 프리셋 (기본: tiny)")
-    parser.add_argument("--config", type=str, default=None,
-                        help="TOML 설정 파일 (프리셋 대신 사용)")
+    parser.add_argument(
+        "--preset", choices=list(PRESETS), default="tiny", help="모델 프리셋 (기본: tiny)"
+    )
+    parser.add_argument(
+        "--config", type=str, default=None, help="TOML 설정 파일 (프리셋 대신 사용)"
+    )
     parser.add_argument("--steps", type=int, default=10, help="학습 스텝 수 (기본: 10)")
     parser.add_argument("--batch-size", type=int, default=None, help="배치 크기")
     parser.add_argument("--seq-len", type=int, default=None, help="시퀀스 길이")
-    parser.add_argument("--device", type=str, default=None,
-                        help="디바이스 강제 지정 (cpu, cuda, mps)")
+    parser.add_argument(
+        "--device", type=str, default=None, help="디바이스 강제 지정 (cpu, cuda, mps)"
+    )
     return parser.parse_args(argv)
 
 
@@ -497,8 +558,11 @@ def main(argv: list[str] | None = None) -> bool:
     config.dropout = 0.0
 
     runner = SmokeTestRunner(
-        config, num_steps=args.steps, batch_size=batch_size,
-        seq_len=seq_len, device=args.device,
+        config,
+        num_steps=args.steps,
+        batch_size=batch_size,
+        seq_len=seq_len,
+        device=args.device,
     )
     return runner.run_all()
 

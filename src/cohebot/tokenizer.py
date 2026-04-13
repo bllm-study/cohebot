@@ -2,15 +2,13 @@ import tiktoken
 
 
 class GPT2Tokenizer:
-
     def __init__(self):
         self.tokenizer = tiktoken.get_encoding("gpt2")
 
         self.eos_token = "<|endoftext|>"
-        self.eos_token_id = self.tokenizer.encode(
-            self.eos_token,
-            allowed_special={self.eos_token}
-        )[0]
+        self.eos_token_id = self.tokenizer.encode(self.eos_token, allowed_special={self.eos_token})[
+            0
+        ]
 
     @property
     def vocab_size(self) -> int:

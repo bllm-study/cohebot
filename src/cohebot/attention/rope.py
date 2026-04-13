@@ -42,8 +42,6 @@ class RotaryPositionEmbedding(nn.Module):
 
         def _rotate(x: torch.Tensor) -> torch.Tensor:
             x1, x2 = x[..., ::2], x[..., 1::2]
-            return torch.stack(
-                [x1 * cos - x2 * sin, x2 * cos + x1 * sin], dim=-1
-            ).flatten(-2)
+            return torch.stack([x1 * cos - x2 * sin, x2 * cos + x1 * sin], dim=-1).flatten(-2)
 
         return _rotate(q), _rotate(k)

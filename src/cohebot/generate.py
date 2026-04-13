@@ -1,4 +1,5 @@
 import argparse
+
 import torch
 
 from .model import CoheLLMBot, CoheLLMBotConfig
@@ -32,7 +33,7 @@ def generate_text(
     temperature: float = 1.0,
     top_k: int | None = None,
     top_p: float | None = None,
-    device: str = "cpu"
+    device: str = "cpu",
 ) -> str:
     input_ids = tokenizer.encode(prompt, add_special_tokens=False)
     input_tensor = torch.tensor([input_ids], dtype=torch.long, device=device)
@@ -68,30 +69,19 @@ def interactive_mode(model: CoheLLMBot, tokenizer: GPT2Tokenizer, device: str):
 
         print("--- Greedy (temperature=0.1) ---")
         text = generate_text(
-            model, tokenizer, prompt,
-            max_new_tokens=50,
-            temperature=0.1,
-            device=device
+            model, tokenizer, prompt, max_new_tokens=50, temperature=0.1, device=device
         )
         print(text)
 
         print("\n--- Top-K=50, temperature=0.8 ---")
         text = generate_text(
-            model, tokenizer, prompt,
-            max_new_tokens=50,
-            temperature=0.8,
-            top_k=50,
-            device=device
+            model, tokenizer, prompt, max_new_tokens=50, temperature=0.8, top_k=50, device=device
         )
         print(text)
 
         print("\n--- Top-P=0.9, temperature=1.0 ---")
         text = generate_text(
-            model, tokenizer, prompt,
-            max_new_tokens=50,
-            temperature=1.0,
-            top_p=0.9,
-            device=device
+            model, tokenizer, prompt, max_new_tokens=50, temperature=1.0, top_p=0.9, device=device
         )
         print(text)
         print("\n" + "=" * 50 + "\n")
@@ -100,46 +90,17 @@ def interactive_mode(model: CoheLLMBot, tokenizer: GPT2Tokenizer, device: str):
 def main():
     parser = argparse.ArgumentParser(description="CoheLLMBot 텍스트 생성")
     parser.add_argument(
-        "--checkpoint",
-        type=str,
-        default="checkpoints/best_model.pt",
-        help="모델 체크포인트 경로"
+        "--checkpoint", type=str, default="checkpoints/best_model.pt", help="모델 체크포인트 경로"
     )
     parser.add_argument(
-        "--prompt",
-        type=str,
-        default=None,
-        help="생성 시작 프롬프트 (없으면 대화형 모드)"
+        "--prompt", type=str, default=None, help="생성 시작 프롬프트 (없으면 대화형 모드)"
     )
+    parser.add_argument("--max_tokens", type=int, default=100, help="생성할 최대 토큰 수")
+    parser.add_argument("--temperature", type=float, default=0.8, help="샘플링 온도")
+    parser.add_argument("--top_k", type=int, default=50, help="Top-K 샘플링")
+    parser.add_argument("--top_p", type=float, default=None, help="Top-P 샘플링")
     parser.add_argument(
-        "--max_tokens",
-        type=int,
-        default=100,
-        help="생성할 최대 토큰 수"
-    )
-    parser.add_argument(
-        "--temperature",
-        type=float,
-        default=0.8,
-        help="샘플링 온도"
-    )
-    parser.add_argument(
-        "--top_k",
-        type=int,
-        default=50,
-        help="Top-K 샘플링"
-    )
-    parser.add_argument(
-        "--top_p",
-        type=float,
-        default=None,
-        help="Top-P 샘플링"
-    )
-    parser.add_argument(
-        "--device",
-        type=str,
-        default="auto",
-        help="디바이스 (auto, cpu, cuda, mps)"
+        "--device", type=str, default="auto", help="디바이스 (auto, cpu, cuda, mps)"
     )
     args = parser.parse_args()
 
@@ -164,19 +125,24 @@ def main():
         print(f"체크포인트를 찾을 수 없습니다: {args.checkpoint}")
         print("테스트용 랜덤 초기화 모델을 사용합니다.")
         config = CoheLLMBotConfig(
-            max_seq_len=256, embed_dim=128, num_heads=4,
-            num_layers=4, ff_dim=512,
+            max_seq_len=256,
+            embed_dim=128,
+            num_heads=4,
+            num_layers=4,
+            ff_dim=512,
         )
         model = CoheLLMBot(config).to(device)
 
     if args.prompt:
         text = generate_text(
-            model, tokenizer, args.prompt,
+            model,
+            tokenizer,
+            args.prompt,
             max_new_tokens=args.max_tokens,
             temperature=args.temperature,
             top_k=args.top_k,
             top_p=args.top_p,
-            device=device
+            device=device,
         )
         print(f"\n생성된 텍스트:\n{text}")
     else:

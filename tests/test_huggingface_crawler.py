@@ -28,9 +28,9 @@ def test_end_to_end_pipeline():
     - wiki_corpus.txt created with formatted text
     - Parquet files cleaned up
     """
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("TEST: End-to-End Pipeline (10 articles)")
-    print("="*60)
+    print("=" * 60)
 
     test_dir = Path("data/test_e2e")
     test_dir.mkdir(parents=True, exist_ok=True)
@@ -57,12 +57,12 @@ def test_end_to_end_pipeline():
 
     assert clean_path.exists(), "wiki_clean.jsonl not created"
     assert corpus_path.exists(), "wiki_corpus.txt not created"
-    print(f"   ✅ Both files exist")
+    print("   ✅ Both files exist")
 
     print("\n5. Verifying wiki_clean.jsonl content...")
-    with open(clean_path, 'r', encoding='utf-8') as f:
+    with open(clean_path, encoding="utf-8") as f:
         first_line = json.loads(f.readline())
-        expected_fields = {'id', 'url', 'title', 'text'}
+        expected_fields = {"id", "url", "title", "text"}
         actual_fields = set(first_line.keys())
 
         assert expected_fields == actual_fields, f"Expected {expected_fields}, got {actual_fields}"
@@ -73,27 +73,29 @@ def test_end_to_end_pipeline():
         print(f"   ✅ All {line_count} articles present")
 
     print("\n6. Verifying wiki_corpus.txt content...")
-    corpus_content = Path(corpus_path).read_text(encoding='utf-8')
+    corpus_content = Path(corpus_path).read_text(encoding="utf-8")
 
     assert len(corpus_content) > 0, "Corpus is empty"
     print(f"   ✅ Corpus contains {len(corpus_content):,} characters")
 
-    assert '# 지미 카터' in corpus_content or '지미 카터' in corpus_content, "First article title not found"
-    print(f"   ✅ Article titles included in corpus")
+    assert "# 지미 카터" in corpus_content or "지미 카터" in corpus_content, (
+        "First article title not found"
+    )
+    print("   ✅ Article titles included in corpus")
 
     print("\n7. Cleaning up...")
     crawler.cleanup()
-    print(f"   ✅ Cleanup completed")
+    print("   ✅ Cleanup completed")
 
     file_size_clean = clean_path.stat().st_size
     file_size_corpus = corpus_path.stat().st_size
-    print(f"\n📊 Output file sizes:")
+    print("\n📊 Output file sizes:")
     print(f"   wiki_clean.jsonl: {file_size_clean:,} bytes ({file_size_clean / 1024:.2f} KB)")
     print(f"   wiki_corpus.txt:    {file_size_corpus:,} bytes ({file_size_corpus / 1024:.2f} KB)")
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("✅ TEST PASSED: End-to-end pipeline successful")
-    print("="*60 + "\n")
+    print("=" * 60 + "\n")
 
 
 def test_chunked_downloading():
@@ -108,9 +110,9 @@ def test_chunked_downloading():
     - 10 articles fetched without downloading full 20GB dataset
     - Articles contain all required fields
     """
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("TEST: Chunked Downloading with Streaming Mode")
-    print("="*60)
+    print("=" * 60)
 
     test_dir = Path("data/test_chunked")
     test_dir.mkdir(parents=True, exist_ok=True)
@@ -128,7 +130,7 @@ def test_chunked_downloading():
 
     print("\n2. Verifying article structure...")
     first_article = articles[0]
-    expected_fields = ['id', 'url', 'title', 'text']
+    expected_fields = ["id", "url", "title", "text"]
     actual_fields = list(first_article.keys())
 
     for field in expected_fields:
@@ -136,13 +138,13 @@ def test_chunked_downloading():
     print(f"   ✅ All fields present: {actual_fields}")
 
     print("\n3. Verifying field content...")
-    assert isinstance(first_article['id'], str), "id should be str"
-    assert isinstance(first_article['url'], str), "url should be str"
-    assert isinstance(first_article['title'], str), "title should be str"
-    assert isinstance(first_article['text'], str), "text should be str"
-    assert len(first_article['text']) > 0, "text should not be empty"
+    assert isinstance(first_article["id"], str), "id should be str"
+    assert isinstance(first_article["url"], str), "url should be str"
+    assert isinstance(first_article["title"], str), "title should be str"
+    assert isinstance(first_article["text"], str), "text should be str"
+    assert len(first_article["text"]) > 0, "text should not be empty"
 
-    print(f"   ✅ Field types and content valid")
+    print("   ✅ Field types and content valid")
     print(f"      id: {first_article['id']}")
     print(f"      url: {first_article['url']}")
     print(f"      title: {first_article['title']}")
@@ -150,11 +152,11 @@ def test_chunked_downloading():
 
     print("\n4. Cleaning up...")
     crawler.cleanup()
-    print(f"   ✅ Cleanup completed")
+    print("   ✅ Cleanup completed")
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("✅ TEST PASSED: Chunked downloading successful")
-    print("="*60 + "\n")
+    print("=" * 60 + "\n")
 
 
 def test_field_preservation():
@@ -169,9 +171,9 @@ def test_field_preservation():
     - wiki_clean.jsonl contains id, url, title, text for all articles
     - Field values match original articles
     """
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("TEST: Field Preservation in Output Files")
-    print("="*60)
+    print("=" * 60)
 
     test_dir = Path("data/test_fields")
     test_dir.mkdir(parents=True, exist_ok=True)
@@ -191,7 +193,7 @@ def test_field_preservation():
     print("\n3. Verifying wiki_clean.jsonl content...")
     clean_path = test_dir / "wiki_clean.jsonl"
 
-    with open(clean_path, 'r', encoding='utf-8') as f:
+    with open(clean_path, encoding="utf-8") as f:
         lines = list(f)
 
     assert len(lines) == saved_count, f"Expected {saved_count} lines, got {len(lines)}"
@@ -201,16 +203,18 @@ def test_field_preservation():
     for i, line in enumerate(lines, 1):
         article = json.loads(line)
 
-        expected_fields = {'id', 'url', 'title', 'text'}
+        expected_fields = {"id", "url", "title", "text"}
         actual_fields = set(article.keys())
 
-        assert expected_fields == actual_fields, f"Line {i}: Expected {expected_fields}, got {actual_fields}"
+        assert expected_fields == actual_fields, (
+            f"Line {i}: Expected {expected_fields}, got {actual_fields}"
+        )
 
-        assert isinstance(article['id'], str), f"Line {i}: id should be str"
-        assert isinstance(article['url'], str), f"Line {i}: url should be str"
-        assert isinstance(article['title'], str), f"Line {i}: title should be str"
-        assert isinstance(article['text'], str), f"Line {i}: text should be str"
-        assert len(article['text']) > 0, f"Line {i}: text should not be empty"
+        assert isinstance(article["id"], str), f"Line {i}: id should be str"
+        assert isinstance(article["url"], str), f"Line {i}: url should be str"
+        assert isinstance(article["title"], str), f"Line {i}: title should be str"
+        assert isinstance(article["text"], str), f"Line {i}: text should be str"
+        assert len(article["text"]) > 0, f"Line {i}: text should not be empty"
 
     print(f"   ✅ All {len(lines)} articles have complete field sets")
 
@@ -218,11 +222,11 @@ def test_field_preservation():
     first_saved = json.loads(lines[0])
     first_original = articles[0]
 
-    assert first_saved['id'] == first_original['id'], "id mismatch"
-    assert first_saved['url'] == first_original['url'], "url mismatch"
-    assert first_saved['title'] == first_original['title'], "title mismatch"
+    assert first_saved["id"] == first_original["id"], "id mismatch"
+    assert first_saved["url"] == first_original["url"], "url mismatch"
+    assert first_saved["title"] == first_original["title"], "title mismatch"
 
-    print(f"   ✅ Fields match original articles")
+    print("   ✅ Fields match original articles")
     print(f"      id: {first_saved['id']}")
     print(f"      url: {first_saved['url']}")
     print(f"      title: {first_saved['title']}")
@@ -230,19 +234,19 @@ def test_field_preservation():
 
     print("\n6. Cleaning up...")
     crawler.cleanup()
-    print(f"   ✅ Cleanup completed")
+    print("   ✅ Cleanup completed")
 
     file_size = clean_path.stat().st_size
     print(f"\n📊 wiki_clean.jsonl size: {file_size:,} bytes ({file_size / 1024:.2f} KB)")
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("✅ TEST PASSED: Field preservation verified")
-    print("="*60 + "\n")
+    print("=" * 60 + "\n")
 
 
 if __name__ == "__main__":
     """Run all tests."""
-    print("\n" + "🧪 "*20)
+    print("\n" + "🧪 " * 20)
     print("\nStarting Hugging Face Crawler Integration Tests\n")
 
     try:
@@ -250,9 +254,9 @@ if __name__ == "__main__":
         test_field_preservation()
         test_end_to_end_pipeline()
 
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("🎉 ALL TESTS PASSED")
-        print("="*60 + "\n")
+        print("=" * 60 + "\n")
     except AssertionError as e:
         print(f"\n❌ TEST FAILED: {e}\n")
         raise

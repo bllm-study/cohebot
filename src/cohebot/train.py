@@ -1,6 +1,5 @@
 import math
 import os
-import subprocess
 import sys
 import time
 from pathlib import Path
@@ -15,16 +14,15 @@ except ModuleNotFoundError:
 
 import torch
 import torch.distributed as dist
-import torch.nn as nn
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.optim import AdamW
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch.utils.data.distributed import DistributedSampler
 from tqdm import tqdm
 
+from .dataset import TextDataset, create_dataloader
 from .model import CoheLLMBot, CoheLLMBotConfig
 from .tokenizer import GPT2Tokenizer
-from .dataset import create_dataloader, TextDataset
 
 try:
     import wandb
@@ -48,7 +46,6 @@ def _is_ddp() -> bool:
 
 
 class Trainer:
-
     def __init__(
         self,
         model: CoheLLMBot,
@@ -124,10 +121,14 @@ class Trainer:
                 else:
                     decay_params.append(param)
 
-        self.optimizer = AdamW([
-            {"params": decay_params, "weight_decay": weight_decay},
-            {"params": no_decay_params, "weight_decay": 0.0},
-        ], lr=learning_rate, betas=(0.9, 0.95))
+        self.optimizer = AdamW(
+            [
+                {"params": decay_params, "weight_decay": weight_decay},
+                {"params": no_decay_params, "weight_decay": 0.0},
+            ],
+            lr=learning_rate,
+            betas=(0.9, 0.95),
+        )
 
         total_steps = len(train_dataloader) * num_epochs
         steps_after_warmup = max(1, total_steps - warmup_steps)
@@ -219,19 +220,21 @@ class Trainer:
             current_lr = self.optimizer.param_groups[0]["lr"]
 
             if self.is_main:
-                pbar.set_postfix({
-                    "loss": f"{loss.item():.4f}",
-                    "lr": f"{current_lr:.2e}"
-                })
-                self._log({
-                    "train/loss": loss.item(),
-                    "train/lr": current_lr,
-                    "train/perplexity": math.exp(min(loss.item(), 20)),
-                }, step=self.global_step)
+                pbar.set_postfix({"loss": f"{loss.item():.4f}", "lr": f"{current_lr:.2e}"})
+                self._log(
+                    {
+                        "train/loss": loss.item(),
+                        "train/lr": current_lr,
+                        "train/perplexity": math.exp(min(loss.item(), 20)),
+                    },
+                    step=self.global_step,
+                )
 
             if self.save_every_n_batches > 0 and (batch_idx + 1) % self.save_every_n_batches == 0:
                 if self.is_main:
-                    self._save_mid_epoch_checkpoint(epoch, batch_idx + 1, total_loss / processed_batches)
+                    self._save_mid_epoch_checkpoint(
+                        epoch, batch_idx + 1, total_loss / processed_batches
+                    )
 
         self.start_batch_idx = 0
         return total_loss / max(1, processed_batches)
@@ -269,7 +272,7 @@ class Trainer:
 
         path = self.checkpoint_dir / "checkpoint_latest.pt"
         torch.save(checkpoint, path)
-        print(f"\n중간 체크포인트 저장: {path} (epoch {epoch+1}, batch {batch_idx})")
+        print(f"\n중간 체크포인트 저장: {path} (epoch {epoch + 1}, batch {batch_idx})")
         self._upload_checkpoint(path)
 
     def save_checkpoint(self, epoch: int, val_loss: float):
@@ -364,12 +367,15 @@ class Trainer:
                         print(f"  Perplexity: {math.exp(val_loss):.2f}")
                     print(f"  소요 시간: {epoch_time:.1f}초\n")
 
-                    self._log({
-                        "epoch/train_loss": train_loss,
-                        "epoch/val_loss": val_loss,
-                        "epoch/perplexity": math.exp(val_loss) if val_loss > 0 else 0,
-                        "epoch/time_sec": epoch_time,
-                    }, step=self.global_step)
+                    self._log(
+                        {
+                            "epoch/train_loss": train_loss,
+                            "epoch/val_loss": val_loss,
+                            "epoch/perplexity": math.exp(val_loss) if val_loss > 0 else 0,
+                            "epoch/time_sec": epoch_time,
+                        },
+                        step=self.global_step,
+                    )
 
                     self.save_checkpoint(epoch, val_loss if self.val_dataloader else train_loss)
 
@@ -407,7 +413,7 @@ def load_wikipedia_corpus(data_dir: str = "data") -> str:
 
     if corpus_path.exists():
         print(f"기존 코퍼스 로드: {corpus_path}")
-        with open(corpus_path, "r", encoding="utf-8") as f:
+        with open(corpus_path, encoding="utf-8") as f:
             return f.read()
 
     raise FileNotFoundError(
@@ -452,22 +458,21 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(description="CoheLLMBot 훈련")
-    parser.add_argument("--config", type=str, default=None,
-                        help="TOML 설정 파일 경로 (예: configs/cloud.toml)")
+    parser.add_argument(
+        "--config", type=str, default=None, help="TOML 설정 파일 경로 (예: configs/cloud.toml)"
+    )
     parser.add_argument("--batch-size", type=int, default=None, help="배치 크기")
     parser.add_argument("--seq-len", type=int, default=None, help="시퀀스 길이")
     parser.add_argument("--epochs", type=int, default=None, help="에폭 수")
     parser.add_argument("--lr", type=float, default=None, help="학습률")
     parser.add_argument("--data-dir", type=str, default=None, help="데이터 디렉토리")
     parser.add_argument("--resume", type=str, default=None, help="체크포인트 경로")
-    parser.add_argument("--max-chars", type=int, default=None,
-                        help="최대 코퍼스 문자 수 (샘플링)")
-    parser.add_argument("--fp16", action="store_true", default=None,
-                        help="FP16 혼합 정밀도 사용")
-    parser.add_argument("--save-every", type=int, default=None,
-                        help="N 배치마다 체크포인트 저장 (0이면 비활성화)")
-    parser.add_argument("--checkpoint-dir", type=str, default=None,
-                        help="체크포인트 저장 디렉토리")
+    parser.add_argument("--max-chars", type=int, default=None, help="최대 코퍼스 문자 수 (샘플링)")
+    parser.add_argument("--fp16", action="store_true", default=None, help="FP16 혼합 정밀도 사용")
+    parser.add_argument(
+        "--save-every", type=int, default=None, help="N 배치마다 체크포인트 저장 (0이면 비활성화)"
+    )
+    parser.add_argument("--checkpoint-dir", type=str, default=None, help="체크포인트 저장 디렉토리")
     args = parser.parse_args()
 
     # TOML 설정 로드
@@ -491,7 +496,9 @@ def main():
     NUM_EPOCHS = args.epochs or train_cfg.get("epochs", 3)
     LEARNING_RATE = args.lr or train_cfg.get("lr", 3e-4)
     USE_FP16 = args.fp16 if args.fp16 is not None else train_cfg.get("fp16", False)
-    SAVE_EVERY = args.save_every if args.save_every is not None else train_cfg.get("save_every", 1000)
+    SAVE_EVERY = (
+        args.save_every if args.save_every is not None else train_cfg.get("save_every", 1000)
+    )
     WEIGHT_DECAY = train_cfg.get("weight_decay", 0.1)
     WARMUP_STEPS = train_cfg.get("warmup_steps", 100)
     MAX_GRAD_NORM = train_cfg.get("max_grad_norm", 1.0)
@@ -555,19 +562,33 @@ def main():
         train_sampler = DistributedSampler(train_dataset, shuffle=True)
         val_sampler = DistributedSampler(val_dataset, shuffle=False)
         train_loader = torch.utils.data.DataLoader(
-            train_dataset, batch_size=BATCH_SIZE, sampler=train_sampler, drop_last=True,
+            train_dataset,
+            batch_size=BATCH_SIZE,
+            sampler=train_sampler,
+            drop_last=True,
         )
         val_loader = torch.utils.data.DataLoader(
-            val_dataset, batch_size=BATCH_SIZE, sampler=val_sampler, drop_last=True,
+            val_dataset,
+            batch_size=BATCH_SIZE,
+            sampler=val_sampler,
+            drop_last=True,
         )
     else:
         train_loader = create_dataloader(
-            train_text, tokenizer, batch_size=BATCH_SIZE,
-            max_length=MAX_SEQ_LEN, stride=MAX_SEQ_LEN // 2, shuffle=True,
+            train_text,
+            tokenizer,
+            batch_size=BATCH_SIZE,
+            max_length=MAX_SEQ_LEN,
+            stride=MAX_SEQ_LEN // 2,
+            shuffle=True,
         )
         val_loader = create_dataloader(
-            val_text, tokenizer, batch_size=BATCH_SIZE,
-            max_length=MAX_SEQ_LEN, stride=MAX_SEQ_LEN // 2, shuffle=False,
+            val_text,
+            tokenizer,
+            batch_size=BATCH_SIZE,
+            max_length=MAX_SEQ_LEN,
+            stride=MAX_SEQ_LEN // 2,
+            shuffle=False,
         )
 
     if _is_main_process():

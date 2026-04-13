@@ -1,6 +1,6 @@
 import json
+from collections.abc import Iterator
 from pathlib import Path
-from typing import Iterator
 
 from tqdm import tqdm
 
@@ -35,10 +35,7 @@ class WikipediaPreprocessor:
         self.clean_path = self.data_dir / "wiki_clean.jsonl"
         self.corpus_path = self.data_dir / "wiki_corpus.txt"
 
-    def process_articles(
-        self,
-        articles: Iterator[dict]
-    ) -> Iterator[dict]:
+    def process_articles(self, articles: Iterator[dict]) -> Iterator[dict]:
         """Process and validate articles.
 
         Args:
@@ -51,7 +48,7 @@ class WikipediaPreprocessor:
             clean_text = self.cleaner.clean(article["text"])
 
             if len(clean_text) > self.max_text_length:
-                clean_text = clean_text[:self.max_text_length]
+                clean_text = clean_text[: self.max_text_length]
 
             if not self.cleaner.is_valid(clean_text):
                 continue
@@ -60,7 +57,7 @@ class WikipediaPreprocessor:
                 "id": article["id"],
                 "url": article["url"],
                 "title": article["title"],
-                "text": clean_text
+                "text": clean_text,
             }
 
     def save_clean_articles(self, articles: Iterator[dict]) -> int:
@@ -94,7 +91,7 @@ class WikipediaPreprocessor:
 
         total_chars = 0
 
-        with open(self.clean_path, "r", encoding="utf-8") as fin:
+        with open(self.clean_path, encoding="utf-8") as fin:
             with open(self.corpus_path, "w", encoding="utf-8") as fout:
                 for line in tqdm(fin, desc="코퍼스 생성"):
                     article = json.loads(line)
@@ -124,7 +121,7 @@ class WikipediaPreprocessor:
         if not self.corpus_path.exists():
             raise FileNotFoundError(f"코퍼스가 없습니다: {self.corpus_path}")
 
-        with open(self.corpus_path, "r", encoding="utf-8") as f:
+        with open(self.corpus_path, encoding="utf-8") as f:
             return f.read()
 
     def get_stats(self) -> dict:
@@ -136,7 +133,7 @@ class WikipediaPreprocessor:
         stats = {}
 
         if self.clean_path.exists():
-            with open(self.clean_path, "r", encoding="utf-8") as f:
+            with open(self.clean_path, encoding="utf-8") as f:
                 articles = [json.loads(line) for line in f]
 
             stats["num_articles"] = len(articles)

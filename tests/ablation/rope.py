@@ -1,11 +1,11 @@
 """FA + RoPE vs FA (no positional encoding)."""
 
-import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
 from cohebot.attention.flash import FlashAttention
-from . import make_data, run, print_table
+
+from . import make_data, print_table, run
 
 
 class FlashAttentionNoRoPE(nn.Module):

@@ -80,6 +80,21 @@ upload_repo = "bllm-study/cohebot-ckpt"
 uv run cohebot-train --config configs/default.toml
 ```
 
+### 코드 포매터 및 린터 (Ruff & pre-commit)
+
+이 프로젝트는 파이썬 린터 겸 포매터로 **Ruff**를 사용하며, 코드를 커밋할 때 자동으로 검사하도록 **pre-commit** 환경이 구성되어 있습니다.
+
+> ⚠️ **주의**: Git 정책 상 훅(hooks) 자동 복제가 불가능하므로, 프로젝트를 처음 Clone 하거나 Pull 받은 이후에는 각 개발자가 **반드시 수동으로 아래 명령어를 1회 실행**하여 pre-commit 훅을 활성화해야 합니다.
+
+```bash
+# 최초 1회만 실행 (이후에는 git commit 시 자동 동작)
+uv sync                 # 의존성(pre-commit 등) 설치 확인
+uv run pre-commit install
+
+# lint / format (GitHub Action 설정과 완전 동일하게 --output-format 지정)
+uv run ruff check --fix --output-format=github . && uv run ruff format --preview --output-format=github .
+```
+
 ---
 
 ## 남은 작업

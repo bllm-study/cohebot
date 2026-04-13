@@ -1,0 +1,13 @@
+# .pre-commit-config.yaml
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.10
+    hooks:
+      # Linter 실행
+      - id: ruff
+        types_or: [python, pyi]
+        args: [ --fix, --output-format=github ]
+      # Formatter 실행
+      - id: ruff-format
+        types_or: [python, pyi]
+        args: [ --preview, --output-format=github ]
