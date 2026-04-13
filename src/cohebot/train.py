@@ -3,12 +3,13 @@ import os
 import sys
 import time
 from pathlib import Path
+from typing import cast
 
 try:
     import tomllib
 except ModuleNotFoundError:
     try:
-        import tomli as tomllib
+        import tomli as tomllib  # type: ignore[import-untyped]
     except ModuleNotFoundError:
         tomllib = None
 
@@ -25,7 +26,7 @@ from .model import CoheLLMBot, CoheLLMBotConfig
 from .tokenizer import GPT2Tokenizer
 
 try:
-    import wandb
+    import wandb  # type: ignore[import-untyped]
 
     _WANDB_AVAILABLE = True
 except ImportError:
@@ -101,7 +102,7 @@ class Trainer:
         if self.ddp:
             self.model = DDP(self.model, device_ids=[self.local_rank])
 
-        self.raw_model = self.model.module if self.ddp else self.model
+        self.raw_model: CoheLLMBot = cast(CoheLLMBot, self.model.module if self.ddp else self.model)
 
         self.train_dataloader = train_dataloader
         self.val_dataloader = val_dataloader

@@ -27,6 +27,10 @@ ignore = [
     #   기본적으로 Formatter가 줄 바꿈을 해주지만, 링크나 불가피한 긴 문자열에서
     #   Linter가 불필요하게 경고하는 것을 방지합니다.
     "E501",
+    # F722 (Syntax error in forward annotation) 무시:
+    #   jaxtyping의 "batch seq_len" 같은 Shape 문자열이 파이썬 문법상으론
+    #   올바른 타입 구문이 아니기 때문에 Ruff가 이를 오해하고 내뿜는 에러를 차단합니다.
+    "F722",
 ]
 
 [format]

@@ -11,3 +11,12 @@ repos:
       - id: ruff-format
         types_or: [python, pyi]
         args: [ --preview, --output-format=github ]
+
+  - repo: local
+    hooks:
+      - id: pyright
+        name: pyright
+        entry: env -u UV_EXCLUDE_NEWER uv run pyright
+        language: system
+        types_or: [python, pyi]
+        pass_filenames: false

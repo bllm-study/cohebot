@@ -35,7 +35,8 @@ class CausalSelfAttention(nn.Module):
         k = k.view(B, T, self.num_heads, self.head_dim).transpose(1, 2)
         v = v.view(B, T, self.num_heads, self.head_dim).transpose(1, 2)
         attn = (q @ k.transpose(-2, -1)) / math.sqrt(self.head_dim)
-        attn = attn.masked_fill(self.causal_mask[:T, :T], float("-inf"))
+        causal_mask: torch.Tensor = self.causal_mask  # type: ignore[assignment]
+        attn = attn.masked_fill(causal_mask[:T, :T], float("-inf"))
         attn = self.attn_dropout(torch.softmax(attn, dim=-1))
         out = (attn @ v).transpose(1, 2).contiguous().view(B, T, self.embed_dim)
         return self.resid_dropout(self.out_proj(out))

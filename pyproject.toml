@@ -18,6 +18,8 @@ dependencies = [
     "datasets",
     "pyarrow",
     "tomli>=2.0.0; python_version < '3.11'",
+    "jaxtyping>=0.3.7",
+    "beartype>=0.22.9",
 ]
 [project.scripts]
 cohebot-crawl = "cohebot.crawler:main"
@@ -32,5 +34,15 @@ packages = ["src/cohebot"]
 [dependency-groups]
 dev = [
     "pre-commit>=4.5.1",
+    "pyright>=1.1.408",
     "ruff>=0.15.10",
+]
+
+[tool.pyright]
+typeCheckingMode = "basic"
+reportMissingTypeStubs = false
+exclude = [
+    ".git",
+    ".venv",
+    "__pycache__",
 ]

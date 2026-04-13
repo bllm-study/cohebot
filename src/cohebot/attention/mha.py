@@ -60,7 +60,8 @@ class MultiHeadAttention(nn.Module):
 
         scale = 1.0 / math.sqrt(self.head_dim)
         attn = torch.matmul(q, k.transpose(-2, -1)) * scale
-        attn = attn.masked_fill(self.causal_mask[:S, :S].unsqueeze(0).unsqueeze(0), float("-inf"))
+        causal_mask: torch.Tensor = self.causal_mask  # type: ignore[assignment]
+        attn = attn.masked_fill(causal_mask[:S, :S].unsqueeze(0).unsqueeze(0), float("-inf"))
         attn = F.softmax(attn, dim=-1)
         attn = self.attn_dropout(attn)
 
