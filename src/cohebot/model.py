@@ -4,6 +4,8 @@ from typing import Literal
 
 import torch
 import torch.nn as nn
+from beartype import beartype
+from jaxtyping import Float, Int
 
 from .attention import FlashAttention, GroupedQueryAttention, MultiHeadAttention
 
@@ -150,9 +152,12 @@ class CoheLLMBot(nn.Module):
         elif isinstance(module, nn.Embedding):
             torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
 
+    @beartype
     def forward(
-        self, input_ids: torch.Tensor, targets: torch.Tensor | None = None
-    ) -> tuple[torch.Tensor, torch.Tensor | None]:
+        self,
+        input_ids: Int[torch.Tensor, "batch seq_len"],
+        targets: Int[torch.Tensor, "batch seq_len"] | None = None,
+    ) -> tuple[Float[torch.Tensor, "batch seq_len vocab"], Float[torch.Tensor, ""] | None]:
         batch_size, seq_len = input_ids.shape
 
         assert seq_len <= self.config.max_seq_len, (
@@ -215,14 +220,15 @@ class CoheLLMBot(nn.Module):
         return model
 
     @torch.no_grad()
+    @beartype
     def generate(
         self,
-        input_ids: torch.Tensor,
+        input_ids: Int[torch.Tensor, "batch seq_len"],
         max_new_tokens: int = 100,
         temperature: float = 1.0,
         top_k: int | None = None,
         top_p: float | None = None,
-    ) -> torch.Tensor:
+    ) -> Int[torch.Tensor, "batch new_seq_len"]:
         self.eval()
 
         for _ in range(max_new_tokens):

@@ -1,0 +1,25 @@
+name: Pyright Type Checker
+
+on:
+  스케줄/이벤트 활성화 시 주석을 해제하세요.
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  pyright:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install Dependencies
+        run: uv sync
+
+      - name: Run Pyright
+        run: uv run pyright

@@ -37,8 +37,10 @@ class RotaryPositionEmbedding(nn.Module):
             rotary embedding이 적용된 (q, k) 튜플.
         """
         seq_len = q.shape[2]
-        cos = self._cos_cached[offset : offset + seq_len]
-        sin = self._sin_cached[offset : offset + seq_len]
+        cos_cached: torch.Tensor = self._cos_cached  # type: ignore[assignment]
+        sin_cached: torch.Tensor = self._sin_cached  # type: ignore[assignment]
+        cos = cos_cached[offset : offset + seq_len]
+        sin = sin_cached[offset : offset + seq_len]
 
         def _rotate(x: torch.Tensor) -> torch.Tensor:
             x1, x2 = x[..., ::2], x[..., 1::2]

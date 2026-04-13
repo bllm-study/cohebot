@@ -1,5 +1,6 @@
 from collections.abc import Iterator
 from pathlib import Path
+from typing import Any
 
 from datasets import load_dataset
 from huggingface_hub import snapshot_download
@@ -110,11 +111,12 @@ class HuggingFaceDatasetCrawler(BaseCrawler):
             ds = ds.take(max_articles)
 
         for article in ds:
+            row: dict[str, Any] = dict(article)  # type: ignore[arg-type]
             yield {
-                "id": article["id"],
-                "url": article["url"],
-                "title": article["title"],
-                "text": article["text"],
+                "id": row["id"],
+                "url": row["url"],
+                "title": row["title"],
+                "text": row["text"],
             }
 
     def cleanup(self) -> None:

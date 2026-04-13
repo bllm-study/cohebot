@@ -93,7 +93,24 @@ uv run pre-commit install
 
 # lint / format (GitHub Action 설정과 완전 동일하게 --output-format 지정)
 uv run ruff check --fix --output-format=github . && uv run ruff format --preview --output-format=github .
+
+# 타입 체크 (Pyright)
+uv run pyright
 ```
+
+### 런타임 타입 및 텐서 차원(Shape) 검사
+
+단순 린팅뿐만 아니라 GPU 연산 시의 Shape 불일치를 런타임에 즉각 잡아내기 위해, `jaxtyping`과 `beartype`을 프로젝트 표준으로 사용합니다.
+
+```python
+from jaxtyping import Float, Int
+from beartype import beartype
+
+@beartype
+def forward(self, input_ids: Int[torch.Tensor, "batch seq_len"]) -> Float[torch.Tensor, "batch seq_len vocab"]:
+    ...
+```
+새로운 모듈 구성 시 위와 같이 `@beartype` 데코레이터와 Shape 어노테이션을 반드시 부착하여, 런타임 차원 오류를 조기에 방어해야 합니다.
 
 ---
 
