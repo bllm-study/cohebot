@@ -1,7 +1,6 @@
 name: Pyright Type Checker
 
 on:
-  스케줄/이벤트 활성화 시 주석을 해제하세요.
   push:
     branches: [ "main" ]
   pull_request:
