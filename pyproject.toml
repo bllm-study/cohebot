@@ -28,3 +28,9 @@ logging = ["wandb>=0.16.0"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/cohebot"]
+
+[dependency-groups]
+dev = [
+    "pre-commit>=4.5.1",
+    "ruff>=0.15.10",
+]

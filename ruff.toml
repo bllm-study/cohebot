@@ -1,0 +1,30 @@
+# ruff.toml
+
+# target-version은 명시하지 않습니다. 
+# 최신 Ruff는 pyproject.toml의 `project.requires-python` (">="3.10") 값을 자동으로 읽어 
+# py310에 맞는 문법을 타겟팅하므로, 단일 버전을 여기에 하드코딩해서 고정하지 않고 유연하게 가져갑니다.
+
+line-length = 100
+
+[lint]
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort (import 정렬 자동화)
+    "UP", # pyupgrade (Python 3.10 이상 버전에 맞는 최신 문법으로 자동 제안)
+    "B",  # flake8-bugbear (잠재적인 버그 가능성이 있는 안티패턴 감지)
+    "C4", # flake8-comprehensions (리스트/딕셔너리 컴프리헨션 개선)
+]
+
+ignore = [
+    # 줄 길이 에러 (E501) 무시: 
+    #   기본적으로 Formatter가 줄 바꿈을 해주지만, 링크나 불가피한 긴 문자열에서
+    #   Linter가 불필요하게 경고하는 것을 방지합니다.
+    "E501",
+]
+
+[format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"

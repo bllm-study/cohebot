@@ -1,7 +1,8 @@
+from collections.abc import Iterator
+from pathlib import Path
+
 from datasets import load_dataset
 from huggingface_hub import snapshot_download
-from pathlib import Path
-from typing import Iterator, Optional
 
 from .base import BaseCrawler
 
@@ -22,10 +23,10 @@ class HuggingFaceDatasetCrawler(BaseCrawler):
     def __init__(
         self,
         data_dir: str = "data",
-        specific_files: Optional[list[str]] = None,
-        exclude_files: Optional[list[str]] = None,
-        max_files: Optional[int] = None,
-        streaming: bool = True
+        specific_files: list[str] | None = None,
+        exclude_files: list[str] | None = None,
+        max_files: int | None = None,
+        streaming: bool = True,
     ):
         """Initialize crawler.
 
@@ -73,12 +74,12 @@ class HuggingFaceDatasetCrawler(BaseCrawler):
             repo_type="dataset",
             local_dir=str(target_dir),
             allow_patterns=allow_patterns,
-            ignore_patterns=ignore_patterns
+            ignore_patterns=ignore_patterns,
         )
 
         if self.max_files:
             downloaded_files = list(Path(local_path).glob("*.parquet"))
-            files_to_keep = sorted(downloaded_files, key=lambda p: p.name)[:self.max_files]
+            files_to_keep = sorted(downloaded_files, key=lambda p: p.name)[: self.max_files]
             for file_to_delete in set(downloaded_files) - set(files_to_keep):
                 file_to_delete.unlink()
 
@@ -97,7 +98,13 @@ class HuggingFaceDatasetCrawler(BaseCrawler):
         Yields:
             Article dictionaries with id, url, title, and text fields.
         """
-        ds = load_dataset(self.REPO_ID, self.SUBSET, split="train", streaming=self.streaming, cache_dir=str(self.data_dir))
+        ds = load_dataset(
+            self.REPO_ID,
+            self.SUBSET,
+            split="train",
+            streaming=self.streaming,
+            cache_dir=str(self.data_dir),
+        )
 
         if max_articles:
             ds = ds.take(max_articles)
@@ -107,7 +114,7 @@ class HuggingFaceDatasetCrawler(BaseCrawler):
                 "id": article["id"],
                 "url": article["url"],
                 "title": article["title"],
-                "text": article["text"]
+                "text": article["text"],
             }
 
     def cleanup(self) -> None:

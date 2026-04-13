@@ -1,12 +1,11 @@
 import math
+from dataclasses import dataclass
 from typing import Literal
 
 import torch
 import torch.nn as nn
-from dataclasses import dataclass, field
 
-from .attention import MultiHeadAttention, GroupedQueryAttention, FlashAttention
-
+from .attention import FlashAttention, GroupedQueryAttention, MultiHeadAttention
 
 AttnType = Literal["mha", "gqa", "flash"]
 
@@ -40,12 +39,7 @@ class GELU(nn.Module):
         return (
             0.5
             * x
-            * (
-                1.0
-                + torch.tanh(
-                    math.sqrt(2.0 / math.pi) * (x + 0.044715 * torch.pow(x, 3))
-                )
-            )
+            * (1.0 + torch.tanh(math.sqrt(2.0 / math.pi) * (x + 0.044715 * torch.pow(x, 3))))
         )
 
 
@@ -136,9 +130,7 @@ class CoheLLMBot(nn.Module):
         # pos_embed 제거 — RoPE가 attention 내부에서 위치 정보를 인코딩
         self.dropout = nn.Dropout(config.dropout)
 
-        self.blocks = nn.ModuleList(
-            [TransformerBlock(config) for _ in range(config.num_layers)]
-        )
+        self.blocks = nn.ModuleList([TransformerBlock(config) for _ in range(config.num_layers)])
 
         self.ln_final = LayerNorm(config.embed_dim)
         self.lm_head = nn.Linear(config.embed_dim, config.vocab_size, bias=False)
@@ -162,7 +154,6 @@ class CoheLLMBot(nn.Module):
         self, input_ids: torch.Tensor, targets: torch.Tensor | None = None
     ) -> tuple[torch.Tensor, torch.Tensor | None]:
         batch_size, seq_len = input_ids.shape
-        device = input_ids.device
 
         assert seq_len <= self.config.max_seq_len, (
             f"시퀀스 길이 {seq_len}이 최대 길이 {self.config.max_seq_len}을 초과합니다"
@@ -192,9 +183,7 @@ class CoheLLMBot(nn.Module):
         device: str | torch.device = "cpu",
     ) -> "CoheLLMBot":
         """체크포인트에서 모델을 로드합니다."""
-        checkpoint = torch.load(
-            checkpoint_path, map_location=device, weights_only=False
-        )
+        checkpoint = torch.load(checkpoint_path, map_location=device, weights_only=False)
 
         if "config" in checkpoint:
             config = checkpoint["config"]
@@ -252,13 +241,9 @@ class CoheLLMBot(nn.Module):
 
             if top_p is not None:
                 sorted_logits, sorted_indices = torch.sort(logits, descending=True)
-                cumulative_probs = torch.cumsum(
-                    torch.softmax(sorted_logits, dim=-1), dim=-1
-                )
+                cumulative_probs = torch.cumsum(torch.softmax(sorted_logits, dim=-1), dim=-1)
                 sorted_indices_to_remove = cumulative_probs > top_p
-                sorted_indices_to_remove[:, 1:] = sorted_indices_to_remove[
-                    :, :-1
-                ].clone()
+                sorted_indices_to_remove[:, 1:] = sorted_indices_to_remove[:, :-1].clone()
                 sorted_indices_to_remove[:, 0] = False
 
                 indices_to_remove = sorted_indices_to_remove.scatter(
@@ -294,7 +279,5 @@ if __name__ == "__main__":
     print(f"Loss: {loss.item():.4f}")
 
     start_tokens = torch.randint(0, config.vocab_size, (1, 5))
-    generated = model.generate(
-        start_tokens, max_new_tokens=20, temperature=0.8, top_k=50
-    )
+    generated = model.generate(start_tokens, max_new_tokens=20, temperature=0.8, top_k=50)
     print(f"Generated shape: {generated.shape}")
