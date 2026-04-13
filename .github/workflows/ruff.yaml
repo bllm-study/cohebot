@@ -17,11 +17,11 @@ jobs:
         uses: astral-sh/ruff-action@v3
         with:
           version: "0.15.10"
-          args: "check --output-format=github"
+          args: "check --force-exclude --output-format=github"
 
       # 2. 포매터 (띄어쓰기, 줄바꿈 등 코드 스타일 검사)
       - name: Run Ruff Formatter
         uses: astral-sh/ruff-action@v3
         with:
           version: "0.15.10"
-          args: "format --check --preview"
+          args: "format --check --preview --force-exclude"

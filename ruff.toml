@@ -6,6 +6,11 @@
 
 line-length = 100
 
+extend-exclude = [
+    "*.md",
+    "*.ipynb",
+]
+
 [lint]
 select = [
     "E",  # pycodestyle errors
