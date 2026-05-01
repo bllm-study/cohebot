@@ -344,29 +344,25 @@ def _check_progression(metrics: list[StepMetric]) -> tuple[bool, list[str]]:
 def _write_csv(path: Path, metrics: list[StepMetric]) -> None:
     with path.open("w", newline="") as f:
         writer = csv.writer(f)
-        writer.writerow(
-            [
-                "step",
-                "loss",
-                "lr",
-                "grad_norm",
-                "param_update_norm",
-                "perplexity",
-                "tokens_per_sec",
-            ]
-        )
+        writer.writerow([
+            "step",
+            "loss",
+            "lr",
+            "grad_norm",
+            "param_update_norm",
+            "perplexity",
+            "tokens_per_sec",
+        ])
         for m in metrics:
-            writer.writerow(
-                [
-                    m.step,
-                    f"{m.loss:.6f}",
-                    f"{m.lr:.6e}",
-                    f"{m.grad_norm:.6f}",
-                    f"{m.param_update_norm:.6f}",
-                    f"{m.perplexity:.4f}",
-                    f"{m.tokens_per_sec:.2f}",
-                ]
-            )
+            writer.writerow([
+                m.step,
+                f"{m.loss:.6f}",
+                f"{m.lr:.6e}",
+                f"{m.grad_norm:.6f}",
+                f"{m.param_update_norm:.6f}",
+                f"{m.perplexity:.4f}",
+                f"{m.tokens_per_sec:.2f}",
+            ])
 
 
 def _write_summary(
